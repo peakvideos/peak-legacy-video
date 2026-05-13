@@ -33,14 +33,14 @@ export function UnsubscribeToggle({
         <span className="font-heading text-blush text-xs uppercase tracking-[0.14em]">
           Unsubscribed
         </span>
-        <span className="text-tofino text-xs">
+        <span className="text-(--adm-text-muted) text-xs">
           on {dateFmt.format(unsubscribedAt)} — drip emails are paused.
         </span>
         <button
           type="button"
           onClick={resubscribe}
           disabled={pending}
-          className="ml-auto text-xs font-heading uppercase tracking-wider text-forest hover:text-gold disabled:opacity-50"
+          className="ml-auto text-xs font-heading uppercase tracking-wider text-(--adm-text) hover:text-gold disabled:opacity-50"
         >
           {pending ? "…" : "Resubscribe"}
         </button>
@@ -61,7 +61,7 @@ export function UnsubscribeToggle({
       trigger={
         <button
           type="button"
-          className="text-[0.7rem] font-heading uppercase tracking-wider text-tofino hover:text-blush"
+          className="text-[0.7rem] font-heading uppercase tracking-wider text-(--adm-text-muted) hover:text-blush"
         >
           Unsubscribe lead
         </button>

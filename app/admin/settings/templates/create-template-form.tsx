@@ -44,7 +44,7 @@ export function CreateTemplateForm() {
         required
         placeholder="Template name"
         disabled={pending}
-        className="text-sm px-3 py-2 border border-forest/20 focus:outline-none focus:border-gold w-48"
+        className="text-sm px-3 py-2 bg-(--adm-surface) text-(--adm-text) border border-(--adm-border-strong) focus:outline-none focus:border-gold w-48"
       />
       <input
         name="subject"
@@ -52,7 +52,7 @@ export function CreateTemplateForm() {
         required
         placeholder="Subject line"
         disabled={pending}
-        className="text-sm px-3 py-2 border border-forest/20 focus:outline-none focus:border-gold w-64"
+        className="text-sm px-3 py-2 bg-(--adm-surface) text-(--adm-text) border border-(--adm-border-strong) focus:outline-none focus:border-gold w-64"
       />
       <button
         type="submit"
@@ -68,7 +68,7 @@ export function CreateTemplateForm() {
           setOpen(false);
           setError(null);
         }}
-        className="text-xs text-tofino hover:text-forest px-2"
+        className="text-xs text-(--adm-text-muted) hover:text-(--adm-text) px-2"
       >
         Cancel
       </button>

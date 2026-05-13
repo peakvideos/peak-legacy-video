@@ -15,25 +15,25 @@ export default async function TemplateEditPage({
   if (!template) notFound();
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-8 space-y-6">
-      <div>
+    <div className="flex-1 overflow-auto px-6 py-8">
+      <div className="mx-auto max-w-4xl space-y-6">
         <Link
           href="/admin/settings/templates"
-          className="text-xs font-heading uppercase tracking-[0.14em] text-tofino hover:text-forest"
+          className="text-xs font-heading uppercase tracking-[0.14em] text-(--adm-text-muted) hover:text-(--adm-text)"
         >
           ← All templates
         </Link>
+        <TemplateEditForm
+          template={{
+            id: template.id,
+            name: template.name,
+            slug: template.slug,
+            subject: template.subject,
+            body: template.body,
+            archivedAt: template.archivedAt,
+          }}
+        />
       </div>
-      <TemplateEditForm
-        template={{
-          id: template.id,
-          name: template.name,
-          slug: template.slug,
-          subject: template.subject,
-          body: template.body,
-          archivedAt: template.archivedAt,
-        }}
-      />
-    </main>
+    </div>
   );
 }

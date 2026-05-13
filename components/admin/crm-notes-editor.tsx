@@ -29,7 +29,7 @@ export function CrmNotesEditor({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-tofino">
+        <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-(--adm-text-muted)">
           Internal notes
         </p>
         <StatusIndicator
@@ -48,7 +48,7 @@ export function CrmNotesEditor({
         }}
         rows={4}
         placeholder="Anything you want to remember about this lead — call notes, follow-up plans, why they went to Lost, etc."
-        className="w-full px-3 py-2 border border-forest/15 text-sm font-sans text-forest focus:outline-none focus:border-gold resize-vertical"
+        className="w-full px-3 py-2 bg-(--adm-surface) border border-(--adm-border) text-sm text-(--adm-text) placeholder:text-(--adm-text-muted) focus:outline-none focus:border-gold resize-vertical"
       />
     </div>
   );
@@ -81,7 +81,7 @@ function StatusIndicator({
         <button
           type="button"
           onClick={onRetry}
-          className="font-heading uppercase tracking-[0.1em] text-gold hover:text-forest cursor-pointer"
+          className="font-heading uppercase tracking-[0.1em] text-gold hover:text-(--adm-text) cursor-pointer"
         >
           Retry
         </button>
@@ -90,31 +90,31 @@ function StatusIndicator({
   }
   if (status === "saving") {
     return (
-      <span className="flex items-center gap-1.5 text-[0.7rem] text-tofino italic">
+      <span className="flex items-center gap-1.5 text-[0.7rem] text-(--adm-text-muted)">
         <Spinner /> Saving…
       </span>
     );
   }
   if (status === "editing" || dirty) {
     return (
-      <span className="text-[0.7rem] italic text-tofino/70">Editing…</span>
+      <span className="text-[0.7rem] text-(--adm-text-muted) opacity-70">Editing…</span>
     );
   }
   if (status === "saved" && savedAt) {
     return (
-      <span className="flex items-center gap-1 text-[0.7rem] italic text-forest/70">
+      <span className="flex items-center gap-1 text-[0.7rem] text-(--adm-text-muted)">
         <CheckIcon /> Saved {timeFmt.format(savedAt)}
       </span>
     );
   }
-  return <span className="text-[0.7rem] italic text-tofino/60">Saved</span>;
+  return <span className="text-[0.7rem] text-(--adm-text-muted) opacity-60">Saved</span>;
 }
 
 function Spinner() {
   return (
     <span
       aria-hidden
-      className="inline-block h-2.5 w-2.5 border-[1.5px] border-tofino/30 border-t-tofino rounded-full animate-spin"
+      className="inline-block h-2.5 w-2.5 border-[1.5px] border-(--adm-text-muted)/30 border-t-(--adm-text-muted) rounded-full animate-spin"
     />
   );
 }

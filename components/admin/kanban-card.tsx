@@ -136,7 +136,7 @@ function cardClassName({
   isOverlay: boolean;
 }) {
   return cn(
-    "group block w-full text-left bg-white border border-forest/10 px-3 py-2.5 cursor-pointer touch-none",
+    "group block w-full text-left bg-(--adm-surface) border border-(--adm-border) px-3 py-2.5 cursor-pointer touch-none",
     "hover:border-gold/50",
     isDragging && "opacity-30",
     isOverlay && "border-gold shadow-md",
@@ -157,25 +157,25 @@ function CardBody({
   return (
     <>
       <div className="flex items-start justify-between gap-2 mb-1">
-        <p className="font-heading text-sm text-forest leading-tight truncate">
+        <p className="font-heading text-sm text-(--adm-text) leading-tight truncate">
           {lead.firstName} {lead.lastName}
         </p>
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="font-heading text-[0.6rem] uppercase tracking-[0.1em] text-tofino">
+          <span className="font-heading text-[0.6rem] uppercase tracking-[0.1em] text-(--adm-text-muted)">
             {PACKAGE_BADGES[lead.packageInterest]}
           </span>
           {draggable && (
             <span
               aria-hidden
               title="Drag to move"
-              className="text-tofino/40 group-hover:text-tofino/80 text-xs leading-none select-none"
+              className="text-(--adm-text-muted) opacity-40 group-hover:opacity-80 text-xs leading-none select-none"
             >
               ⋮⋮
             </span>
           )}
         </div>
       </div>
-      <p className="text-xs text-tofino truncate mb-2">{lead.email}</p>
+      <p className="text-xs text-(--adm-text-muted) truncate mb-2">{lead.email}</p>
 
       {lead.stage === "booked_a_call" && lead.upcomingBooking && (
         <p className="text-xs font-heading text-gold">
@@ -184,7 +184,7 @@ function CardBody({
       )}
 
       {lead.nextEmailJob && (
-        <p className="text-[0.7rem] text-tofino italic truncate">
+        <p className="text-[0.7rem] text-(--adm-text-muted) truncate">
           Next: {lead.nextEmailJob.templateName} ·{" "}
           {dateFmt.format(lead.nextEmailJob.sendAt)}
         </p>
@@ -194,7 +194,7 @@ function CardBody({
         (lead.stage === "new" ||
           lead.stage === "stale" ||
           lead.stage === "booked_a_call") && (
-          <p className="text-[0.7rem] text-tofino italic">No emails queued</p>
+          <p className="text-[0.7rem] text-(--adm-text-muted)">No emails queued</p>
         )}
 
       {(lead.stage === "closed" ||
@@ -202,7 +202,7 @@ function CardBody({
         lead.stage === "post_video_shoot" ||
         lead.stage === "video_shoot_scheduled" ||
         lead.stage === "call_completed") && (
-        <p className="text-[0.7rem] text-tofino italic">
+        <p className="text-[0.7rem] text-(--adm-text-muted)">
           Updated {relativeTime(lead.updatedAt)}
         </p>
       )}

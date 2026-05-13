@@ -104,10 +104,10 @@ export default async function SequencesPage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-8 space-y-8">
+    <div className="flex-1 overflow-auto px-6 py-6 space-y-6">
       <header>
-        <h1 className="text-forest text-3xl mb-1">Email sequences</h1>
-        <p className="text-tofino italic text-sm">
+        <h1 className="text-(--adm-text) text-2xl mb-1">Email sequences</h1>
+        <p className="text-(--adm-text-muted) text-xs">
           Drip emails the cron worker has scheduled, sent, or failed to deliver.
         </p>
       </header>
@@ -173,7 +173,7 @@ export default async function SequencesPage() {
           />
         </TabsContent>
       </Tabs>
-    </main>
+    </div>
   );
 }
 
@@ -208,14 +208,14 @@ function Section({
 }) {
   if (rows.length === 0) {
     return (
-      <div className="bg-white border border-forest/10 p-8 text-center">
-        <p className="text-tofino italic text-sm">{empty}</p>
+      <div className="bg-(--adm-surface) border border-(--adm-border) p-8 text-center">
+        <p className="text-(--adm-text-muted) text-sm">{empty}</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white border border-forest/10 overflow-x-auto">
+    <div className="bg-(--adm-surface) border border-(--adm-border) overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -231,10 +231,10 @@ function Section({
         <TableBody>
           {rows.map((r) => (
             <TableRow key={r.id}>
-              <TableCell className="font-medium text-forest whitespace-nowrap">
+              <TableCell className="font-medium text-(--adm-text) whitespace-nowrap">
                 {r.leadFirstName} {r.leadLastName}
               </TableCell>
-              <TableCell className="text-tofino">
+              <TableCell className="text-(--adm-text-muted)">
                 <a href={`mailto:${r.leadEmail}`} className="hover:text-gold">
                   {r.leadEmail}
                 </a>
@@ -242,29 +242,29 @@ function Section({
               <TableCell className="whitespace-nowrap max-w-[260px]">
                 <Link
                   href={`/admin/settings/templates/${r.templateId}`}
-                  className="font-heading text-forest hover:text-gold truncate block"
+                  className="font-heading text-(--adm-text) hover:text-gold truncate block"
                 >
                   {r.templateName}
                 </Link>
-                <span className="text-tofino text-xs truncate block">
+                <span className="text-(--adm-text-muted) text-xs truncate block">
                   {r.templateSubject}
                 </span>
               </TableCell>
-              <TableCell className="text-sm text-tofino whitespace-nowrap">
+              <TableCell className="text-sm text-(--adm-text-muted) whitespace-nowrap">
                 {r.whenLabel}
               </TableCell>
               <TableCell>
                 <StatusBadge status={r.status} attempts={r.attempts} />
               </TableCell>
               {showError && (
-                <TableCell className="text-xs text-tofino max-w-[260px] truncate">
+                <TableCell className="text-xs text-(--adm-text-muted) max-w-[260px] truncate">
                   {r.lastError ?? "—"}
                 </TableCell>
               )}
               <TableCell className="text-right">
                 <Link
                   href={`/admin/leads/${r.leadId}`}
-                  className="font-heading text-xs uppercase tracking-[0.1em] text-gold hover:text-forest"
+                  className="font-heading text-xs uppercase tracking-[0.1em] text-gold hover:text-(--adm-text)"
                 >
                   View →
                 </Link>
@@ -289,13 +289,13 @@ function Stat({
   muted?: boolean;
 }) {
   const accent =
-    tone === "danger" ? "border-blush" : muted ? "border-tofino/40" : "border-gold";
+    tone === "danger" ? "border-blush" : muted ? "border-(--adm-border)" : "border-gold";
   return (
-    <div className={`bg-white border-l-2 ${accent} p-4`}>
-      <p className="font-heading text-[0.7rem] uppercase tracking-[0.18em] text-tofino mb-1.5">
+    <div className={`bg-(--adm-surface) border border-(--adm-border) border-l-2 ${accent} p-4`}>
+      <p className="font-heading text-[0.7rem] uppercase tracking-[0.18em] text-(--adm-text-muted) mb-1.5">
         {label}
       </p>
-      <p className={`font-heading text-2xl ${muted ? "text-tofino" : "text-forest"}`}>
+      <p className={`font-heading text-2xl ${muted ? "text-(--adm-text-muted)" : "text-(--adm-text)"}`}>
         {value}
       </p>
     </div>
@@ -311,19 +311,19 @@ function StatusBadge({
 }) {
   if (status === "pending" && attempts > 0) {
     return (
-      <Badge variant="outline" className="text-tofino">
+      <Badge variant="outline" className="text-(--adm-text-muted)">
         Retry · {attempts}
       </Badge>
     );
   }
   if (status === "sent") {
-    return <Badge className="bg-gold/15 text-forest border border-gold/40">Sent</Badge>;
+    return <Badge className="bg-gold/15 text-gold border border-gold/40">Sent</Badge>;
   }
   if (status === "failed") {
     return <Badge variant="outline" className="text-blush border-blush/50">Failed</Badge>;
   }
   if (status === "cancelled") {
-    return <Badge variant="outline" className="text-tofino/70">Cancelled</Badge>;
+    return <Badge variant="outline" className="text-(--adm-text-muted) opacity-70">Cancelled</Badge>;
   }
-  return <Badge variant="outline" className="text-tofino">Pending</Badge>;
+  return <Badge variant="outline" className="text-(--adm-text-muted)">Pending</Badge>;
 }

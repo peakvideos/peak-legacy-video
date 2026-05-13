@@ -55,11 +55,11 @@ export function StageAutomationsEditor({
   return (
     <div className="space-y-6">
       <section className="space-y-2">
-        <h2 className="font-heading uppercase tracking-[0.14em] text-xs text-tofino">
+        <h2 className="font-heading uppercase tracking-[0.14em] text-xs text-(--adm-text-muted)">
           Automations ({automations.length})
         </h2>
         {automations.length === 0 ? (
-          <p className="bg-white border border-forest/10 p-6 text-sm text-tofino italic">
+          <p className="bg-(--adm-surface) border border-(--adm-border) p-6 text-sm text-(--adm-text-muted)">
             No automations yet. Add one below to start nurturing leads who
             land in this stage.
           </p>
@@ -121,7 +121,7 @@ function SortableAutomationList({
   // and remain editable.
   if (!mounted) {
     return (
-      <ul className="bg-white border border-forest/10 divide-y divide-forest/10">
+      <ul className="bg-(--adm-surface) border border-(--adm-border) divide-y divide-(--adm-border)">
         {optimistic.map((a) => (
           <AutomationRow
             key={a.id}
@@ -140,7 +140,7 @@ function SortableAutomationList({
         items={optimistic.map((a) => a.id)}
         strategy={verticalListSortingStrategy}
       >
-        <ul className="bg-white border border-forest/10 divide-y divide-forest/10">
+        <ul className="bg-(--adm-surface) border border-(--adm-border) divide-y divide-(--adm-border)">
           {optimistic.map((a) => (
             <AutomationRow
               key={a.id}
@@ -216,7 +216,7 @@ function AutomationRow({
       ref={sortable ? sortableHandle.setNodeRef : undefined}
       style={style}
       className={cn(
-        "px-4 py-3 flex items-center gap-3 flex-wrap bg-white",
+        "px-4 py-3 flex items-center gap-3 flex-wrap bg-(--adm-surface)",
         sortableHandle.isDragging && "opacity-60 shadow-md z-10",
       )}
     >
@@ -226,7 +226,7 @@ function AutomationRow({
           aria-label="Drag to reorder"
           {...sortableHandle.attributes}
           {...sortableHandle.listeners}
-          className="cursor-grab active:cursor-grabbing text-tofino/60 hover:text-forest text-base leading-none touch-none"
+          className="cursor-grab active:cursor-grabbing text-(--adm-text-muted) hover:text-(--adm-text) text-base leading-none touch-none"
         >
           ⋮⋮
         </button>
@@ -234,11 +234,11 @@ function AutomationRow({
       <div className="flex-1 min-w-0">
         <Link
           href={`/admin/settings/templates/${automation.templateId}`}
-          className="font-heading text-forest text-sm hover:text-gold"
+          className="font-heading text-(--adm-text) text-sm hover:text-gold"
         >
           {automation.templateName}
         </Link>
-        <p className="text-xs text-tofino truncate">
+        <p className="text-xs text-(--adm-text-muted) truncate">
           {automation.templateSubject}
         </p>
       </div>
@@ -258,7 +258,7 @@ function AutomationRow({
                   reset();
                 }
               }}
-              className="text-sm px-2 py-1 border border-forest/20 focus:outline-none focus:border-gold w-24"
+              className="text-sm px-2 py-1 bg-(--adm-surface) text-(--adm-text) border border-(--adm-border-strong) focus:outline-none focus:border-gold w-24"
               placeholder="5m / 1d"
             />
             <button
@@ -273,20 +273,20 @@ function AutomationRow({
               type="button"
               onClick={reset}
               disabled={pending}
-              className="text-xs text-tofino hover:text-forest px-1"
+              className="text-xs text-(--adm-text-muted) hover:text-(--adm-text) px-1"
             >
               Cancel
             </button>
           </>
         ) : (
           <>
-            <span className="text-sm font-heading text-tofino tabular-nums">
+            <span className="text-sm font-heading text-(--adm-text-muted) tabular-nums">
               after {formatDelayLabel(automation.delayMinutes)}
             </span>
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="text-xs font-heading uppercase tracking-wider text-tofino hover:text-gold"
+              className="text-xs font-heading uppercase tracking-wider text-(--adm-text-muted) hover:text-gold"
             >
               edit
             </button>
@@ -303,7 +303,7 @@ function AutomationRow({
                 <button
                   type="button"
                   disabled={pending}
-                  className="text-xs font-heading uppercase tracking-wider text-blush hover:text-forest disabled:opacity-50"
+                  className="text-xs font-heading uppercase tracking-wider text-blush hover:text-(--adm-text) disabled:opacity-50"
                 >
                   remove
                 </button>
@@ -358,12 +358,12 @@ function AddAutomationForm({
 
   if (availableTemplates.length === 0) {
     return (
-      <div className="bg-off-white/60 border border-forest/10 p-4 text-xs text-tofino italic">
+      <div className="bg-(--adm-surface-2) border border-(--adm-border) p-4 text-xs text-(--adm-text-muted)">
         Every active template is already attached to this stage. Create more
         in{" "}
         <Link
           href="/admin/settings/templates"
-          className="underline hover:text-forest"
+          className="underline hover:text-(--adm-text)"
         >
           /admin/settings/templates
         </Link>
@@ -373,8 +373,8 @@ function AddAutomationForm({
   }
 
   return (
-    <section className="bg-white border border-forest/10 p-4 space-y-2">
-      <h2 className="font-heading uppercase tracking-[0.14em] text-xs text-tofino">
+    <section className="bg-(--adm-surface) border border-(--adm-border) p-4 space-y-2">
+      <h2 className="font-heading uppercase tracking-[0.14em] text-xs text-(--adm-text-muted)">
         Add automation
       </h2>
       <div className="flex items-center gap-2 flex-wrap">
@@ -382,7 +382,7 @@ function AddAutomationForm({
           value={templateId}
           onChange={(e) => setTemplateId(e.target.value)}
           disabled={pending}
-          className="text-sm px-3 py-2 border border-forest/20 bg-white focus:outline-none focus:border-gold flex-1 min-w-[240px]"
+          className="text-sm px-3 py-2 border border-(--adm-border-strong) bg-(--adm-surface) text-(--adm-text) focus:outline-none focus:border-gold flex-1 min-w-[240px]"
         >
           <option value="">Pick a template…</option>
           {availableTemplates.map((t) => (
@@ -397,7 +397,7 @@ function AddAutomationForm({
           onChange={(e) => setDelay(e.target.value)}
           disabled={pending}
           placeholder="5m / 1d / 2h"
-          className="text-sm px-3 py-2 border border-forest/20 focus:outline-none focus:border-gold w-32"
+          className="text-sm px-3 py-2 border border-(--adm-border-strong) bg-(--adm-surface) text-(--adm-text) focus:outline-none focus:border-gold w-32"
         />
         <button
           type="button"

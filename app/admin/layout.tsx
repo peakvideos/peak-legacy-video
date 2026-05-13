@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
-import Link from "next/link";
+import { headers, cookies } from "next/headers";
 import { auth } from "@/lib/auth";
-import { AdminNav } from "@/components/admin/admin-nav";
-import { Toaster } from "@/components/ui/sonner";
-import { SignOutButton } from "./sign-out-button";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminThemeProvider } from "@/components/admin/admin-theme";
+import { ADMIN_THEME_COOKIE, type Theme } from "@/lib/admin/theme";
+import { AdminToaster } from "@/components/admin/admin-toaster";
+import { loadSidebarCounts } from "@/lib/admin/sidebar-counts";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { MobileSidebarTrigger } from "@/components/admin/mobile-sidebar-trigger";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +17,8 @@ export const metadata: Metadata = {
   title: "Admin — Peak Studios CO",
   robots: { index: false, follow: false, nocache: true },
 };
+
+const SIDEBAR_COOKIE = "sidebar_state";
 
 export default async function AdminLayout({
   children,
@@ -27,27 +33,36 @@ export default async function AdminLayout({
     redirect("/sign-in");
   }
 
+  const counts = await loadSidebarCounts();
+
+  const cookieStore = await cookies();
+  const storedTheme = cookieStore.get(ADMIN_THEME_COOKIE)?.value;
+  const initialTheme: Theme = storedTheme === "dark" ? "dark" : "light";
+  const sidebarOpen = cookieStore.get(SIDEBAR_COOKIE)?.value !== "false";
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      `[admin-theme] cookie read: "${storedTheme ?? "(none)"}" → initialTheme=${initialTheme}`,
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-off-white flex flex-col">
-      <header className="bg-forest text-white border-b-2 border-gold">
-        <div className="mx-auto max-w-7xl px-6 py-3 flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-6 flex-wrap">
-            <Link
-              href="/admin"
-              className="font-heading text-xs uppercase tracking-[0.18em] text-gold"
-            >
-              Peak Studios CO &middot; Admin
-            </Link>
-            <AdminNav />
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <span className="text-sky hidden sm:inline">{session.user.email}</span>
-            <SignOutButton />
-          </div>
-        </div>
-      </header>
-      <div className="flex-1">{children}</div>
-      <Toaster richColors closeButton position="bottom-right" />
-    </div>
+    <AdminThemeProvider
+      initialTheme={initialTheme}
+      className="h-screen overflow-hidden bg-(--adm-page)"
+    >
+      <TooltipProvider delayDuration={300}>
+        <SidebarProvider defaultOpen={sidebarOpen} className="h-screen">
+          <AdminSidebar counts={counts} userEmail={session.user.email ?? ""} />
+          <SidebarInset className="bg-(--adm-page) min-h-0">
+            <MobileSidebarTrigger />
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+              {children}
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      </TooltipProvider>
+      <AdminToaster />
+    </AdminThemeProvider>
   );
 }

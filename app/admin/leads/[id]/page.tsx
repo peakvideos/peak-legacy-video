@@ -15,14 +15,16 @@ export default async function LeadDetailPage({
   if (!detail) notFound();
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10 space-y-6">
-      <Link
-        href="/admin"
-        className="font-heading text-xs uppercase tracking-[0.12em] text-tofino hover:text-gold"
-      >
-        ← Back to board
-      </Link>
-      <LeadDetailContent data={detail} />
-    </main>
+    <div className="flex-1 overflow-auto px-6 py-8">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <Link
+          href="/admin"
+          className="font-heading text-xs uppercase tracking-[0.12em] text-(--adm-text-muted) hover:text-gold"
+        >
+          ← Back to inbox
+        </Link>
+        <LeadDetailContent data={detail} />
+      </div>
+    </div>
   );
 }

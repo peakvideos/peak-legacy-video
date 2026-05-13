@@ -13,6 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { useAdminTheme } from "./admin-theme";
 
 /**
  * Wraps a trigger element in an AlertDialog. The trigger child is rendered
@@ -38,6 +39,7 @@ export function ConfirmDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const { theme } = useAdminTheme();
 
   const handleConfirm = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -50,12 +52,17 @@ export function ConfirmDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent
+        className={cn(
+          "admin-shell bg-(--adm-surface) text-(--adm-text) border-(--adm-border)",
+          theme === "dark" && "dark",
+        )}
+      >
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogTitle className="text-(--adm-text)">{title}</AlertDialogTitle>
           {description && (
             <AlertDialogDescription asChild>
-              <div className="text-sm text-muted-foreground">{description}</div>
+              <div className="text-sm text-(--adm-text-muted)">{description}</div>
             </AlertDialogDescription>
           )}
         </AlertDialogHeader>

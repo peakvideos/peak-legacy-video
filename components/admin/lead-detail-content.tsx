@@ -54,10 +54,10 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
     <div className="space-y-6">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="font-heading text-forest text-2xl">
+          <h2 className="font-heading text-(--adm-text) text-2xl">
             {lead.firstName} {lead.lastName}
           </h2>
-          <p className="text-tofino text-sm">
+          <p className="text-(--adm-text-muted) text-sm">
             <a href={`mailto:${lead.email}`} className="hover:text-gold">
               {lead.email}
             </a>
@@ -79,25 +79,25 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
       )}
 
       {(upcomingBooking || showNextEmail) && (
-        <section className="bg-sky-light/60 border-l-2 border-gold p-4 space-y-2">
+        <section className="bg-(--adm-surface-2) border-l-2 border-gold p-4 space-y-2">
           {upcomingBooking && (
             <div>
-              <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-tofino mb-1">
+              <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-(--adm-text-muted) mb-1">
                 Upcoming call
               </p>
-              <p className="font-heading text-forest">
+              <p className="font-heading text-(--adm-text)">
                 {dateTimeFmt.format(upcomingBooking.scheduledAt)}
               </p>
             </div>
           )}
           {showNextEmail && nextEmailJob && (
             <div>
-              <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-tofino mb-1">
+              <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-(--adm-text-muted) mb-1">
                 Next email
               </p>
-              <p className="text-sm text-forest">
+              <p className="text-sm text-(--adm-text)">
                 {nextEmailJob.templateName} —{" "}
-                <span className="italic">
+                <span className="text-(--adm-text-muted)">
                   {dateFmt.format(nextEmailJob.sendAt)}
                 </span>
               </p>
@@ -107,13 +107,13 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
       )}
 
       <section>
-        <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-tofino mb-2">
+        <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-(--adm-text-muted) mb-2">
           Stage
         </p>
         <StageActions leadId={lead.id} current={lead.stage} />
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white border border-forest/10 p-5">
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-(--adm-surface) border border-(--adm-border) p-5">
         <Field
           label="Package interest"
           value={PACKAGE_LABELS[lead.packageInterest]}
@@ -127,15 +127,15 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
           </div>
         )}
         {utm.length > 0 && (
-          <div className="sm:col-span-2 pt-2 border-t border-forest/8">
-            <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-tofino mb-2">
+          <div className="sm:col-span-2 pt-2 border-t border-(--adm-border)">
+            <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-(--adm-text-muted) mb-2">
               UTM
             </p>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
               {utm.map(([label, value]) => (
                 <div key={label} className="flex gap-2">
-                  <dt className="text-tofino">{label}:</dt>
-                  <dd className="text-forest">{value}</dd>
+                  <dt className="text-(--adm-text-muted)">{label}:</dt>
+                  <dd className="text-(--adm-text)">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -154,11 +154,11 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
       )}
 
       <section>
-        <h3 className="font-heading text-forest text-base uppercase tracking-[0.12em] mb-3">
+        <h3 className="font-heading text-(--adm-text) text-base uppercase tracking-[0.12em] mb-3">
           Bookings
         </h3>
         {leadBookings.length === 0 ? (
-          <p className="text-tofino italic text-sm">
+          <p className="text-(--adm-text-muted) text-sm">
             No bookings yet for this lead.
           </p>
         ) : (
@@ -166,24 +166,32 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
             {leadBookings.map((b) => (
               <li
                 key={b.id}
-                className="bg-white border-l-2 border-gold p-3 flex items-start justify-between gap-3 flex-wrap text-sm"
+                className="bg-(--adm-surface) border border-(--adm-border) border-l-2 border-l-gold p-3 flex items-start justify-between gap-3 flex-wrap text-sm"
               >
                 <div>
-                  <p className="font-heading text-forest">
+                  <p className="font-heading text-(--adm-text)">
                     {dateTimeFmt.format(b.scheduledAt)}
                   </p>
-                  <p className="text-xs text-tofino mt-0.5">
+                  <p className="text-xs text-(--adm-text-muted) mt-0.5">
                     Created {dateFmt.format(b.createdAt)}
-                    {b.gcalEventId
-                      ? ` · GCal ${b.gcalEventId.slice(0, 12)}…`
-                      : " · GCal event not created"}
+                    {b.gcalEventId ? (
+                      <>
+                        {" · GCal "}
+                        <span className="font-mono">
+                          {b.gcalEventId.slice(0, 12)}
+                        </span>
+                        …
+                      </>
+                    ) : (
+                      " · GCal event not created"
+                    )}
                   </p>
                 </div>
                 <Badge
                   variant={b.status === "scheduled" ? "default" : "outline"}
                   className={
                     b.status === "scheduled"
-                      ? "bg-gold/15 text-forest border border-gold/40"
+                      ? "bg-gold/15 text-gold border border-gold/40"
                       : ""
                   }
                 >
@@ -196,11 +204,11 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
       </section>
 
       <section>
-        <h3 className="font-heading text-forest text-base uppercase tracking-[0.12em] mb-3">
+        <h3 className="font-heading text-(--adm-text) text-base uppercase tracking-[0.12em] mb-3">
           Email sequence
         </h3>
         {leadJobs.length === 0 ? (
-          <p className="text-tofino italic text-sm">
+          <p className="text-(--adm-text-muted) text-sm">
             No emails scheduled or sent.
           </p>
         ) : (
@@ -208,17 +216,17 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
             {leadJobs.map((job) => (
               <li
                 key={job.id}
-                className="bg-white border border-forest/10 px-3 py-2 flex items-center justify-between gap-3 text-sm"
+                className="bg-(--adm-surface) border border-(--adm-border) px-3 py-2 flex items-center justify-between gap-3 text-sm"
               >
                 <div className="min-w-0">
-                  <p className="font-heading text-forest truncate">
+                  <p className="font-heading text-(--adm-text) truncate">
                     {job.templateName}
                   </p>
-                  <p className="text-xs text-tofino truncate">
+                  <p className="text-xs text-(--adm-text-muted) truncate">
                     {job.templateSubject}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-tofino shrink-0">
+                <div className="flex items-center gap-3 text-xs text-(--adm-text-muted) shrink-0">
                   <span>
                     {job.status === "sent"
                       ? `Sent ${job.sentAt ? dateFmt.format(job.sentAt) : ""}`
@@ -246,10 +254,10 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-tofino mb-1">
+      <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-(--adm-text-muted) mb-1">
         {label}
       </p>
-      <p className="text-forest text-sm whitespace-pre-wrap">{value}</p>
+      <p className="text-(--adm-text) text-sm whitespace-pre-wrap">{value}</p>
     </div>
   );
 }

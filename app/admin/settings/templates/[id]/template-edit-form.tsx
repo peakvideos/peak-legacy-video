@@ -101,10 +101,10 @@ export function TemplateEditForm({
               if (dirty) void flushNow();
             }}
             placeholder="Template name"
-            className="w-full text-3xl text-forest bg-transparent border-b border-transparent focus:border-gold focus:outline-none"
+            className="w-full text-3xl text-(--adm-text) bg-transparent border-b border-transparent focus:border-gold focus:outline-none"
           />
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-tofino text-xs">slug:</span>
+            <span className="text-(--adm-text-muted) text-xs">slug:</span>
             <input
               type="text"
               value={slug}
@@ -112,7 +112,7 @@ export function TemplateEditForm({
               onBlur={() => {
                 if (dirty) void flushNow();
               }}
-              className="text-xs font-heading uppercase tracking-[0.1em] text-tofino bg-transparent border-b border-transparent focus:border-gold focus:outline-none"
+              className="text-xs font-heading uppercase tracking-[0.1em] text-(--adm-text-muted) bg-transparent border-b border-transparent focus:border-gold focus:outline-none"
             />
           </div>
         </div>
@@ -127,7 +127,7 @@ export function TemplateEditForm({
                   toast.success("Template unarchived");
                 });
               }}
-              className="text-xs font-heading uppercase tracking-[0.14em] px-3 py-2 border border-forest/20 text-forest hover:bg-off-white disabled:opacity-50"
+              className="text-xs font-heading uppercase tracking-[0.14em] px-3 py-2 border border-(--adm-border-strong) text-(--adm-text) hover:bg-(--adm-hover) disabled:opacity-50"
             >
               Unarchive
             </button>
@@ -155,7 +155,7 @@ export function TemplateEditForm({
       </header>
 
       <section className="space-y-2">
-        <label className="text-xs font-heading uppercase tracking-[0.14em] text-tofino">
+        <label className="text-xs font-heading uppercase tracking-[0.14em] text-(--adm-text-muted)">
           Subject
         </label>
         <input
@@ -165,12 +165,12 @@ export function TemplateEditForm({
           onBlur={() => {
             if (dirty) void flushNow();
           }}
-          className="w-full text-base px-3 py-2 border border-forest/15 bg-white focus:outline-none focus:border-gold"
+          className="w-full text-base px-3 py-2 border border-(--adm-border) bg-(--adm-surface) text-(--adm-text) focus:outline-none focus:border-gold"
         />
       </section>
 
       <section className="space-y-2">
-        <label className="text-xs font-heading uppercase tracking-[0.14em] text-tofino">
+        <label className="text-xs font-heading uppercase tracking-[0.14em] text-(--adm-text-muted)">
           Body
         </label>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -183,21 +183,21 @@ export function TemplateEditForm({
         </div>
       </section>
 
-      <section className="bg-off-white/60 border border-forest/10 p-4">
-        <p className="text-xs font-heading uppercase tracking-[0.14em] text-tofino mb-2">
+      <section className="bg-(--adm-surface-2) border border-(--adm-border) p-4">
+        <p className="text-xs font-heading uppercase tracking-[0.14em] text-(--adm-text-muted) mb-2">
           Available variables
         </p>
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
           {TEMPLATE_VARIABLES.map((v) => (
-            <li key={v.name} className="text-tofino">
-              <span className="font-heading text-forest">{`{{${v.name}}}`}</span>{" "}
+            <li key={v.name} className="text-(--adm-text-muted)">
+              <span className="font-mono text-(--adm-text)">{`{{${v.name}}}`}</span>{" "}
               · {v.description}
             </li>
           ))}
         </ul>
       </section>
 
-      <footer className="sticky bottom-0 bg-off-white/90 backdrop-blur border-t border-forest/10 py-3 -mx-6 px-6 flex items-center justify-between gap-3 flex-wrap">
+      <footer className="sticky bottom-0 bg-(--adm-surface-2)/95 backdrop-blur border-t border-(--adm-border) py-3 -mx-6 px-6 flex items-center justify-between gap-3 flex-wrap">
         <SendTestButton templateId={template.id} canSend={canSendTest} archived={archived} />
         <AutosaveStatusIndicator
           status={status}
@@ -245,7 +245,7 @@ function SendTestButton({
             ? "Wait for autosave to finish before sending a test."
             : "Send a test email to your address with sample variables."
       }
-      className="font-heading text-xs uppercase tracking-[0.14em] px-4 py-2 border border-forest/20 text-forest hover:bg-off-white disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
+      className="font-heading text-xs uppercase tracking-[0.14em] px-4 py-2 border border-(--adm-border-strong) text-(--adm-text) hover:bg-(--adm-hover) disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-2"
     >
       {pending ? (
         <>
@@ -281,7 +281,7 @@ function AutosaveStatusIndicator({
         <button
           type="button"
           onClick={onRetry}
-          className="font-heading uppercase tracking-[0.1em] text-gold hover:text-forest"
+          className="font-heading uppercase tracking-[0.1em] text-gold hover:text-(--adm-text)"
         >
           Retry
         </button>
@@ -290,22 +290,22 @@ function AutosaveStatusIndicator({
   }
   if (status === "saving") {
     return (
-      <span className="flex items-center gap-1.5 text-xs text-tofino italic">
+      <span className="flex items-center gap-1.5 text-xs text-(--adm-text-muted)">
         <Spinner /> Saving…
       </span>
     );
   }
   if (status === "editing" || dirty) {
-    return <span className="text-xs italic text-tofino/70">Editing…</span>;
+    return <span className="text-xs text-(--adm-text-muted) opacity-70">Editing…</span>;
   }
   if (status === "saved" && savedAt) {
     return (
-      <span className="flex items-center gap-1 text-xs italic text-forest/70">
+      <span className="flex items-center gap-1 text-xs text-(--adm-text-muted)">
         <CheckIcon /> Saved {timeFmt.format(savedAt)}
       </span>
     );
   }
-  return <span className="text-xs italic text-tofino/60">Saved</span>;
+  return <span className="text-xs text-(--adm-text-muted) opacity-60">Saved</span>;
 }
 
 function Spinner() {

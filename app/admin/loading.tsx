@@ -1,30 +1,26 @@
 export default function AdminLoading() {
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10 space-y-10">
-      <div>
-        <div className="h-9 w-64 bg-forest/8 animate-pulse" />
-        <div className="h-4 w-48 bg-forest/6 animate-pulse mt-2" />
+    <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="px-6 py-3 border-b border-(--adm-border) bg-(--adm-surface)">
+        <div className="h-5 w-40 bg-(--adm-text-muted)/15 animate-pulse" />
+        <div className="h-3 w-56 bg-(--adm-text-muted)/10 animate-pulse mt-1.5" />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="bg-white border-l-2 border-gold p-5">
-            <div className="h-3 w-24 bg-forest/8 animate-pulse mb-3" />
-            <div className="h-9 w-16 bg-forest/8 animate-pulse" />
-          </div>
-        ))}
-      </div>
-      <div className="bg-white border border-forest/10 p-8">
-        {[0, 1, 2, 3, 4].map((i) => (
+      <div className="flex-1 overflow-hidden">
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
           <div
             key={i}
-            className="flex items-center gap-4 py-3 border-b last:border-b-0 border-forest/8"
+            className="grid grid-cols-[80px_1fr_auto] gap-4 px-6 py-3 border-b border-(--adm-border) items-start"
           >
-            <div className="h-4 w-32 bg-forest/8 animate-pulse" />
-            <div className="h-4 w-48 bg-forest/8 animate-pulse" />
-            <div className="h-4 w-24 bg-forest/8 animate-pulse ml-auto" />
+            <div className="h-4 w-16 bg-(--adm-text-muted)/15 animate-pulse" />
+            <div>
+              <div className="h-3 w-32 bg-(--adm-text-muted)/15 animate-pulse mb-2" />
+              <div className="h-4 w-64 bg-(--adm-text-muted)/15 animate-pulse mb-1" />
+              <div className="h-3 w-80 bg-(--adm-text-muted)/10 animate-pulse" />
+            </div>
+            <div className="h-7 w-14 bg-(--adm-text-muted)/15 animate-pulse" />
           </div>
         ))}
       </div>
-    </main>
+    </div>
   );
 }

@@ -3,12 +3,16 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { type ReactNode } from "react";
+import { useAdminTheme } from "./admin-theme";
 
 export function LeadDetailModal({
   open,
@@ -21,9 +25,10 @@ export function LeadDetailModal({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { theme } = useAdminTheme();
 
   return (
-    <Dialog
+    <Sheet
       open={open}
       onOpenChange={(next) => {
         if (!next) {
@@ -31,28 +36,24 @@ export function LeadDetailModal({
         }
       }}
     >
-      <DialogContent
-        showCloseButton
-        className="!max-w-3xl gap-0 p-0 overflow-hidden border-t-4 border-gold max-h-[90vh] flex flex-col"
+      <SheetContent
+        className={cn("admin-shell", theme === "dark" && "dark", "bg-(--adm-surface)")}
       >
-        <DialogTitle className="sr-only">Lead detail</DialogTitle>
-        {leadId && (
-          <div className="flex items-center justify-between gap-4 pl-6 pr-14 py-3 border-b border-forest/8 bg-off-white">
-            <span className="font-heading text-[0.7rem] uppercase tracking-[0.18em] text-tofino">
-              Lead Detail
-            </span>
+        <SheetHeader>
+          <SheetTitle className="text-(--adm-text)">Lead detail</SheetTitle>
+          {leadId && (
             <Link
               href={`/admin/leads/${leadId}`}
-              className="font-heading text-[0.7rem] uppercase tracking-[0.1em] text-tofino hover:text-gold flex items-center gap-1.5"
+              className="font-heading text-[0.65rem] uppercase tracking-[0.1em] text-(--adm-text-muted) hover:text-gold flex items-center gap-1.5 mr-9"
               title="Open in dedicated page"
             >
               Expand
               <ExternalLink className="size-3" />
             </Link>
-          </div>
-        )}
-        <div className="px-6 py-6 overflow-y-auto">{children}</div>
-      </DialogContent>
-    </Dialog>
+          )}
+        </SheetHeader>
+        <SheetBody>{children}</SheetBody>
+      </SheetContent>
+    </Sheet>
   );
 }

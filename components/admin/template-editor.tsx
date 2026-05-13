@@ -43,7 +43,7 @@ export function TemplateEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none focus:outline-none min-h-[260px] p-4 bg-white",
+          "tiptap-editor prose prose-sm max-w-none focus:outline-none min-h-[260px] p-4",
       },
     },
     onUpdate: ({ editor }) => {
@@ -57,14 +57,14 @@ export function TemplateEditor({
 
   if (!editor) {
     return (
-      <div className="border border-forest/15 bg-white p-4 text-sm text-tofino italic">
+      <div className="border border-(--adm-border) bg-(--adm-surface) p-4 text-sm text-(--adm-text-muted)">
         Loading editor…
       </div>
     );
   }
 
   return (
-    <div className="border border-forest/15 bg-white">
+    <div className="border border-(--adm-border) bg-(--adm-surface) text-(--adm-text)">
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
       <ValidationStrip editor={editor} />
@@ -76,7 +76,7 @@ function Toolbar({ editor }: { editor: Editor }) {
   const [linkOpen, setLinkOpen] = useState(false);
 
   return (
-    <div className="flex flex-wrap items-center gap-1 border-b border-forest/10 px-2 py-1.5 bg-off-white/60">
+    <div className="flex flex-wrap items-center gap-1 border-b border-(--adm-border) px-2 py-1.5 bg-(--adm-surface-2)">
       <ToolbarButton
         active={editor.isActive("bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -148,8 +148,8 @@ function ToolbarButton({
       title={label}
       className={cn(
         "h-7 min-w-7 px-2 text-xs flex items-center justify-center rounded-sm",
-        "text-forest/80 hover:text-forest hover:bg-forest/5",
-        active && "bg-gold/15 text-forest",
+        "text-(--adm-text-muted) hover:text-(--adm-text) hover:bg-(--adm-hover)",
+        active && "bg-gold/15 text-gold",
       )}
     >
       {children}
@@ -158,7 +158,7 @@ function ToolbarButton({
 }
 
 function Divider() {
-  return <span aria-hidden className="mx-1 h-4 w-px bg-forest/15" />;
+  return <span aria-hidden className="mx-1 h-4 w-px bg-(--adm-border)" />;
 }
 
 function LinkButton({
@@ -209,7 +209,7 @@ function LinkPopover({
   };
 
   return (
-    <div className="absolute left-0 top-9 z-10 w-72 bg-white border border-forest/15 shadow-md p-2 flex gap-1">
+    <div className="absolute left-0 top-9 z-10 w-72 bg-(--adm-surface) border border-(--adm-border) shadow-md p-2 flex gap-1">
       <input
         autoFocus
         type="text"
@@ -224,7 +224,7 @@ function LinkPopover({
           }
         }}
         placeholder="https://… or {{bookingUrl}}"
-        className="flex-1 text-sm px-2 py-1 border border-forest/15 focus:outline-none focus:border-gold"
+        className="flex-1 text-sm px-2 py-1 bg-(--adm-surface) text-(--adm-text) border border-(--adm-border) focus:outline-none focus:border-gold"
       />
       <button
         type="button"
@@ -252,25 +252,25 @@ function VariablePicker({ editor }: { editor: Editor }) {
         onClick={() => setOpen(!open)}
         className={cn(
           "h-7 px-2.5 text-xs font-heading uppercase tracking-[0.1em] flex items-center gap-1 rounded-sm",
-          "text-forest hover:bg-gold/15",
+          "text-(--adm-text) hover:bg-gold/15",
           open && "bg-gold/15",
         )}
       >
         {"{{ }}"} <span>variable</span>
       </button>
       {open && (
-        <div className="absolute left-0 top-9 z-10 w-72 bg-white border border-forest/15 shadow-md py-1.5">
+        <div className="absolute left-0 top-9 z-10 w-72 bg-(--adm-surface) border border-(--adm-border) shadow-md py-1.5">
           {TEMPLATE_VARIABLES.map((v) => (
             <button
               key={v.name}
               type="button"
               onClick={() => insert(v.name)}
-              className="w-full text-left px-3 py-1.5 hover:bg-off-white"
+              className="w-full text-left px-3 py-1.5 hover:bg-(--adm-hover)"
             >
-              <p className="text-sm font-heading text-forest">
+              <p className="text-sm font-mono text-(--adm-text)">
                 {`{{${v.name}}}`}
               </p>
-              <p className="text-xs text-tofino">{v.description}</p>
+              <p className="text-xs text-(--adm-text-muted)">{v.description}</p>
             </button>
           ))}
         </div>

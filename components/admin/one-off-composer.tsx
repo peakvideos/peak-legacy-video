@@ -17,6 +17,8 @@ import {
   listActiveTemplatesForComposer,
   sendOneOffEmailToLead,
 } from "@/app/admin/actions";
+import { cn } from "@/lib/utils";
+import { useAdminTheme } from "./admin-theme";
 
 const EMPTY_DOC: TemplateBody = {
   type: "doc",
@@ -44,6 +46,7 @@ export function OneOffComposer({
   const [body, setBody] = useState<TemplateBody>(EMPTY_DOC);
   const [templates, setTemplates] = useState<TemplateOption[] | null>(null);
   const [pending, startTransition] = useTransition();
+  const { theme } = useAdminTheme();
 
   // Lazy-load active templates the first time the dialog opens.
   useEffect(() => {
@@ -88,28 +91,33 @@ export function OneOffComposer({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="font-heading text-xs uppercase tracking-[0.14em] px-3 py-2 border border-forest/20 text-forest hover:bg-off-white"
+          className="font-heading text-xs uppercase tracking-[0.14em] px-3 py-2 border border-(--adm-border-strong) text-(--adm-text) hover:bg-(--adm-hover)"
         >
           Compose email
         </button>
       </DialogTrigger>
-      <DialogContent className="!max-w-3xl gap-0 p-0 overflow-hidden border-t-4 border-gold max-h-[90vh] flex flex-col">
-        <DialogHeader className="px-6 py-3 border-b border-forest/10">
-          <DialogTitle className="font-heading text-forest">
+      <DialogContent
+        className={cn(
+          "admin-shell !max-w-3xl gap-0 p-0 overflow-hidden border-t-4 border-gold max-h-[90vh] flex flex-col bg-(--adm-surface) text-(--adm-text)",
+          theme === "dark" && "dark",
+        )}
+      >
+        <DialogHeader className="px-6 py-3 border-b border-(--adm-border)">
+          <DialogTitle className="font-heading text-(--adm-text)">
             Compose email to {leadFirstName}
           </DialogTitle>
-          <p className="text-xs text-tofino">{leadEmail}</p>
+          <p className="text-xs text-(--adm-text-muted)">{leadEmail}</p>
         </DialogHeader>
         <div className="px-6 py-5 space-y-4 overflow-y-auto">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-heading uppercase tracking-[0.14em] text-tofino shrink-0">
+            <label className="text-xs font-heading uppercase tracking-[0.14em] text-(--adm-text-muted) shrink-0">
               Start from:
             </label>
             <select
               defaultValue=""
               disabled={pending || templates === null}
               onChange={(e) => loadTemplate(e.target.value)}
-              className="text-sm px-2 py-1 border border-forest/15 bg-white focus:outline-none focus:border-gold flex-1"
+              className="text-sm px-2 py-1 border border-(--adm-border) bg-(--adm-surface) text-(--adm-text) focus:outline-none focus:border-gold flex-1"
             >
               <option value="">
                 {templates === null
@@ -126,7 +134,7 @@ export function OneOffComposer({
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-heading uppercase tracking-[0.14em] text-tofino">
+            <label className="text-xs font-heading uppercase tracking-[0.14em] text-(--adm-text-muted)">
               Subject
             </label>
             <input
@@ -134,11 +142,11 @@ export function OneOffComposer({
               value={subject}
               disabled={pending}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full text-base px-3 py-2 border border-forest/15 bg-white focus:outline-none focus:border-gold"
+              className="w-full text-base px-3 py-2 border border-(--adm-border) bg-(--adm-surface) text-(--adm-text) focus:outline-none focus:border-gold"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-heading uppercase tracking-[0.14em] text-tofino">
+            <label className="text-xs font-heading uppercase tracking-[0.14em] text-(--adm-text-muted)">
               Body
             </label>
             <TemplateEditor
@@ -148,12 +156,12 @@ export function OneOffComposer({
             />
           </div>
         </div>
-        <footer className="px-6 py-3 border-t border-forest/10 bg-off-white/80 flex items-center justify-end gap-2">
+        <footer className="px-6 py-3 border-t border-(--adm-border) bg-(--adm-surface-2) flex items-center justify-end gap-2">
           <button
             type="button"
             disabled={pending}
             onClick={() => setOpen(false)}
-            className="font-heading text-xs uppercase tracking-[0.14em] px-3 py-2 text-tofino hover:text-forest"
+            className="font-heading text-xs uppercase tracking-[0.14em] px-3 py-2 text-(--adm-text-muted) hover:text-(--adm-text)"
           >
             Cancel
           </button>

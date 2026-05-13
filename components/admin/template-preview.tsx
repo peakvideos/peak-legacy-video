@@ -41,22 +41,22 @@ export function TemplatePreview({
   );
 
   return (
-    <div className="border border-forest/15 bg-white">
-      <div className="border-b border-forest/10 px-4 py-2 bg-off-white/60">
-        <p className="font-heading text-[0.7rem] uppercase tracking-[0.14em] text-tofino mb-1">
+    <div className="border border-(--adm-border) bg-(--adm-surface)">
+      <div className="border-b border-(--adm-border) px-4 py-2 bg-(--adm-surface-2)">
+        <p className="font-heading text-[0.7rem] uppercase tracking-[0.14em] text-(--adm-text-muted) mb-1">
           Subject
         </p>
-        <p className="text-sm text-forest font-heading truncate">
+        <p className="text-sm text-(--adm-text) font-heading truncate">
           {renderedSubject || (
-            <span className="italic text-tofino/60">No subject set</span>
+            <span className="text-(--adm-text-muted) opacity-60">No subject set</span>
           )}
         </p>
       </div>
-      <div className="px-4 py-3 bg-off-white/30">
-        <p className="font-heading text-[0.7rem] uppercase tracking-[0.14em] text-tofino mb-2">
+      <div className="px-4 py-3 bg-(--adm-surface-2)/50">
+        <p className="font-heading text-[0.7rem] uppercase tracking-[0.14em] text-(--adm-text-muted) mb-2">
           Body preview · sample variables
         </p>
-        <div className="bg-white border border-forest/8 max-h-[420px] overflow-auto">
+        <div className="bg-white border border-(--adm-border) max-h-[420px] overflow-auto">
           <style>{`.email-preview-shell { all: initial; } .email-preview-shell * { font-family: inherit; } ${EMAIL_BASE_CSS}`}</style>
           <div
             className="email-preview-shell"

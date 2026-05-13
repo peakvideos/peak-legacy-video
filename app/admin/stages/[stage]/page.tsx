@@ -56,24 +56,23 @@ export default async function StagePage({
     }));
 
   return (
-    <main className="mx-auto max-w-4xl px-6 py-8 space-y-6">
-      <div>
+    <div className="flex-1 overflow-auto px-6 py-8">
+      <div className="mx-auto max-w-4xl space-y-6">
         <Link
-          href="/admin"
-          className="text-xs font-heading uppercase tracking-[0.14em] text-tofino hover:text-forest"
+          href="/admin/boards"
+          className="text-xs font-heading uppercase tracking-[0.14em] text-(--adm-text-muted) hover:text-(--adm-text)"
         >
-          ← Board
+          ← Boards
         </Link>
-      </div>
-      <header>
-        <h1 className="text-forest text-3xl mb-1">
-          {STAGE_LABELS[validStage]}
-        </h1>
-        <p className="text-tofino italic text-sm">
-          Emails queued automatically when a lead enters this stage. Delay is
-          measured from the moment they enter.
-        </p>
-      </header>
+        <header>
+          <h1 className="text-(--adm-text) text-2xl mb-1">
+            {STAGE_LABELS[validStage]}
+          </h1>
+          <p className="text-(--adm-text-muted) text-xs">
+            Emails queued automatically when a lead enters this stage. Delay is
+            measured from the moment they enter.
+          </p>
+        </header>
 
       <StageAutomationsEditor
         stage={validStage}
@@ -88,11 +87,12 @@ export default async function StagePage({
         availableTemplates={availableTemplates}
       />
 
-      <p className="text-xs text-tofino">
-        When a lead changes stage, queued automations are cancelled and the
-        new stage&apos;s automations are queued — except for any template
-        that has already been sent to this lead, which is skipped.
-      </p>
-    </main>
+        <p className="text-xs text-(--adm-text-muted)">
+          When a lead changes stage, queued automations are cancelled and the
+          new stage&apos;s automations are queued — except for any template
+          that has already been sent to this lead, which is skipped.
+        </p>
+      </div>
+    </div>
   );
 }

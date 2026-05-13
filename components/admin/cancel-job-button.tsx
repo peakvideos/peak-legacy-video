@@ -29,7 +29,7 @@ export function CancelJobButton({
       type="button"
       onClick={handle}
       disabled={pending}
-      className="text-[0.7rem] font-heading uppercase tracking-wider text-tofino hover:text-blush disabled:opacity-50"
+      className="text-[0.7rem] font-heading uppercase tracking-wider text-(--adm-text-muted) hover:text-blush disabled:opacity-50"
     >
       {pending ? "…" : "Cancel"}
     </button>

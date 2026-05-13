@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Alata, Cardo } from "next/font/google";
+import { Alata, Cardo, Inter, JetBrains_Mono } from "next/font/google";
 import { BookingModalProvider } from "@/components/booking/booking-modal-provider";
 import { MetaPixelScript } from "@/components/meta-pixel-script";
 import "./globals.css";
@@ -24,6 +24,20 @@ const cardo = Cardo({
   display: "swap",
 });
 
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title,
@@ -43,6 +57,9 @@ export const metadata: Metadata = {
     title,
     description,
   },
+  appleWebApp: {
+    title: "Peak Legacy",
+  },
 };
 
 export const viewport: Viewport = {
@@ -59,7 +76,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${alata.variable} ${cardo.variable} h-full antialiased`}
+      className={`${alata.variable} ${cardo.variable} ${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <MetaPixelScript />

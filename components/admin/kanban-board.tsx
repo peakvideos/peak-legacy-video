@@ -145,7 +145,7 @@ export function KanbanBoard({ leads }: { leads: KanbanLeadRow[] }) {
   );
 
   const board = (
-    <div className="overflow-x-auto -mx-6 px-6 pb-2">
+    <div className="overflow-x-auto pb-2">
       <div className="grid grid-flow-col auto-cols-[minmax(240px,1fr)] gap-3 min-w-max">
         {stagesShown.map((stage) => (
           <KanbanColumn
@@ -195,7 +195,7 @@ function ViewTabs({
     { id: "all", label: "All" },
   ];
   return (
-    <div className="inline-flex border border-forest/15 bg-white">
+    <div className="inline-flex border border-(--adm-border) bg-(--adm-surface)">
       {tabs.map((t) => (
         <button
           key={t.id}
@@ -205,7 +205,7 @@ function ViewTabs({
             "font-heading text-[0.7rem] uppercase tracking-[0.12em] px-3 py-1.5",
             view === t.id
               ? "bg-forest text-gold"
-              : "text-tofino hover:text-forest hover:bg-off-white",
+              : "text-(--adm-text-muted) hover:text-(--adm-text) hover:bg-(--adm-hover)",
           )}
         >
           {t.label}
@@ -231,10 +231,10 @@ function SearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search name or email…"
-        className="text-sm px-3 py-1.5 border border-forest/15 bg-white focus:outline-none focus:border-gold w-56"
+        className="text-sm px-3 py-1.5 border border-(--adm-border) bg-(--adm-surface) text-(--adm-text) placeholder:text-(--adm-text-muted) focus:outline-none focus:border-gold w-full sm:w-56"
       />
       {matchCount != null && (
-        <span className="text-xs text-tofino italic">
+        <span className="text-xs text-(--adm-text-muted)">
           {matchCount} match{matchCount === 1 ? "" : "es"}
         </span>
       )}
@@ -301,22 +301,22 @@ function ColumnShell({
     <div
       ref={ref}
       className={cn(
-        "flex flex-col bg-off-white/60 border-t-2 min-w-[240px]",
+        "flex flex-col bg-(--adm-surface-2) border-t-2 min-w-[240px]",
         tone,
         isOver && "bg-gold/10",
       )}
     >
-      <header className="flex items-center justify-between px-3 py-2.5 border-b border-forest/8">
-        <h2 className="font-heading text-[0.72rem] uppercase tracking-[0.12em] text-forest truncate">
+      <header className="flex items-center justify-between px-3 py-2.5 border-b border-(--adm-border)">
+        <h2 className="font-heading text-[0.72rem] uppercase tracking-[0.12em] text-(--adm-text) truncate">
           {STAGE_LABELS[stage]}
         </h2>
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="font-heading text-xs text-tofino">
+          <span className="font-heading text-xs text-(--adm-text-muted)">
             {leads.length}
           </span>
           <Link
             href={`/admin/stages/${stage}`}
-            className="text-tofino/60 hover:text-gold text-base leading-none"
+            className="text-(--adm-text-muted) hover:text-gold text-base leading-none"
             title={`Edit ${STAGE_LABELS[stage]} automations`}
           >
             ⚙
@@ -325,7 +325,7 @@ function ColumnShell({
       </header>
       <div className="flex-1 px-2 py-2 space-y-2 min-h-[120px]">
         {leads.length === 0 ? (
-          <p className="text-xs italic text-tofino/60 text-center px-3 py-6">
+          <p className="text-xs text-(--adm-text-muted) text-center px-3 py-6">
             {emptyText(stage)}
           </p>
         ) : (

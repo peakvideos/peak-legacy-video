@@ -55,41 +55,44 @@ export const STAGE_TONE: Record<LeadStage, string> = {
   lost: "border-blush/50",
 };
 
+const IDLE_BASE =
+  "border text-(--adm-text-muted) hover:text-(--adm-text)";
+
 export const STAGE_BUTTON_STYLE: Record<
   LeadStage,
   { active: string; idle: string }
 > = {
   new: {
     active: "bg-gold text-forest",
-    idle: "border border-gold/40 text-tofino hover:border-gold hover:text-forest",
+    idle: `${IDLE_BASE} border-gold/40 hover:border-gold`,
   },
   stale: {
     active: "bg-tofino text-white",
-    idle: "border border-tofino/40 text-tofino hover:border-tofino hover:text-forest",
+    idle: `${IDLE_BASE} border-tofino/40 hover:border-tofino`,
   },
   booked_a_call: {
     active: "bg-gold text-forest",
-    idle: "border border-gold/40 text-tofino hover:border-gold hover:text-forest",
+    idle: `${IDLE_BASE} border-gold/40 hover:border-gold`,
   },
   call_completed: {
     active: "bg-sky text-forest",
-    idle: "border border-sky/40 text-tofino hover:border-sky hover:text-forest",
+    idle: `${IDLE_BASE} border-sky/40 hover:border-sky`,
   },
   video_shoot_scheduled: {
     active: "bg-moss text-white",
-    idle: "border border-moss/40 text-tofino hover:border-moss hover:text-forest",
+    idle: `${IDLE_BASE} border-moss/40 hover:border-moss`,
   },
   post_video_shoot: {
     active: "bg-blush/60 text-forest",
-    idle: "border border-blush/30 text-tofino hover:border-blush hover:text-forest",
+    idle: `${IDLE_BASE} border-blush/30 hover:border-blush`,
   },
   closed: {
     active: "bg-forest text-white",
-    idle: "border border-forest/30 text-tofino hover:border-forest hover:text-forest",
+    idle: `${IDLE_BASE} border-forest/30 hover:border-forest`,
   },
   lost: {
     active: "bg-blush/70 text-forest",
-    idle: "border border-blush/40 text-tofino hover:border-blush hover:text-forest",
+    idle: `${IDLE_BASE} border-blush/40 hover:border-blush`,
   },
 };
 

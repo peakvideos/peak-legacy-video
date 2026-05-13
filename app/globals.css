@@ -10,6 +10,8 @@
   --font-sans: var(--font-cardo);
   --font-serif: var(--font-cardo);
   --font-heading: var(--font-alata);
+  --font-inter: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
 
   --color-forest: #233415;
   --color-forest-deep: #1a2710;
@@ -144,4 +146,162 @@
   h4 {
     font-family: var(--font-heading);
   }
+}
+
+/* ============================================================================
+   ADMIN THEME TOKENS
+
+   Scoped to .admin-shell so the landing page never inherits these. The .dark
+   class is applied to the same wrapper (not <html>), so the public site is
+   unaffected by the operator's admin theme preference.
+
+   Brand accent colors (gold, blush, moss) are intentionally identical in
+   both modes — they read well on either background.
+   ============================================================================ */
+
+.admin-shell {
+  --adm-page: var(--color-off-white);
+  --adm-surface: #ffffff;
+  --adm-surface-2: var(--color-off-white);
+  --adm-text: var(--color-forest);
+  --adm-text-muted: var(--color-tofino);
+  --adm-border: rgba(35, 52, 21, 0.10);
+  --adm-border-strong: rgba(35, 52, 21, 0.18);
+  --adm-hover: var(--color-off-white);
+  --adm-selected: rgba(206, 166, 74, 0.12);
+  --adm-header-bg: var(--color-forest);
+  --adm-header-fg: #ffffff;
+
+  /* Inter is the UI font for the admin. Override --font-heading / --font-alata
+     inside the admin scope so existing `font-heading` utilities and the global
+     `h1-h4 { font-family: var(--font-heading) }` rule both pick up Inter. */
+  --font-heading: var(--font-inter);
+  --font-alata: var(--font-inter);
+
+  font-family: var(--font-inter), system-ui, sans-serif;
+  /* Tabular figures + slashed zero everywhere by default. Prose contexts
+     (TipTap editor body, email preview) opt out below. */
+  font-variant-numeric: tabular-nums slashed-zero;
+  /* Inter character variants: disambiguated lowercase l/i/I + open digits.
+     Costs nothing if the font isn't loaded; ignored gracefully. */
+  font-feature-settings: "cv02" 1, "cv11" 1, "ss02" 1;
+
+  background-color: var(--adm-page);
+  color: var(--adm-text);
+}
+
+/* Headings — Inter renders thinner than Alata at the same numeric weight,
+   so page titles and drawer titles want 500 to feel intentional. Same for
+   tracked-out uppercase microcopy (the small-caps labels that lean on
+   `font-heading`). */
+.admin-shell h1,
+.admin-shell h2,
+.admin-shell h3,
+.admin-shell h4,
+.admin-shell h5,
+.admin-shell .font-heading {
+  font-family: var(--font-inter);
+  font-weight: 500;
+}
+
+/* Form elements default to user-agent fonts. Force inheritance so admin
+   inputs / textareas / selects / buttons render in Inter and respect the
+   shell's tabular figures + stylistic alternates. */
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea,
+.admin-shell button {
+  font-family: inherit;
+  font-variant-numeric: inherit;
+  font-feature-settings: inherit;
+}
+
+/* Override shadcn Sidebar primitive tokens inside the admin shell so the
+   <Sidebar /> renders in our palette. Targeting the data attributes
+   directly rather than relying on the Tailwind --sidebar variable, since
+   @theme inline bakes the var lookup in at compile time and our scoped
+   override of --sidebar wouldn't propagate to compiled `bg-sidebar`. */
+.admin-shell [data-slot="sidebar-inner"],
+.admin-shell [data-slot="sidebar"][data-mobile="true"] {
+  background-color: var(--adm-surface);
+  color: var(--adm-text);
+}
+.admin-shell [data-sidebar="separator"] {
+  background-color: var(--adm-border);
+}
+.admin-shell [data-sidebar="sidebar"] [data-slot="sidebar-menu-button"]:hover,
+.admin-shell [data-slot="sidebar-menu-button"][data-active="true"] {
+  background-color: var(--adm-surface-2);
+  color: var(--adm-text);
+}
+.admin-shell [data-side="left"][data-slot="sidebar-container"] {
+  border-right-color: var(--adm-border);
+}
+
+.admin-shell.dark {
+  /* Neutral dark slate — green stays as accent (gold/moss/tofino badges and
+     the gold left-border on active sidebar items) rather than tinting every
+     surface. */
+  --adm-page: #0e1116;
+  --adm-surface: #161a20;
+  --adm-surface-2: #1d222a;
+  --adm-text: #e5e7eb;
+  --adm-text-muted: #9ca3af;
+  --adm-border: rgba(255, 255, 255, 0.08);
+  --adm-border-strong: rgba(255, 255, 255, 0.16);
+  --adm-hover: rgba(255, 255, 255, 0.04);
+  --adm-selected: rgba(206, 166, 74, 0.16);
+  --adm-header-bg: #0a0c10;
+  --adm-header-fg: #e5e7eb;
+}
+
+/* TipTap editor body — override prose defaults to honor admin theme. The
+   editor renders email body content with the Cardo serif (so authors see
+   roughly what recipients will read), but the chrome colors flip with the
+   admin theme. The brand serif also opts back out of the admin shell's
+   tabular figures + stylistic alternates — they're for UI/data, not prose. */
+.admin-shell .tiptap-editor,
+.admin-shell .email-preview-shell {
+  color: var(--adm-text);
+  font-family: var(--font-cardo), Georgia, serif;
+  font-variant-numeric: normal;
+  font-feature-settings: normal;
+}
+.admin-shell .tiptap-editor p,
+.admin-shell .tiptap-editor li,
+.admin-shell .tiptap-editor blockquote {
+  color: var(--adm-text);
+}
+.admin-shell .tiptap-editor h1,
+.admin-shell .tiptap-editor h2,
+.admin-shell .tiptap-editor h3 {
+  color: var(--adm-text);
+  font-family: var(--font-heading);
+}
+.admin-shell .tiptap-editor a {
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.admin-shell .tiptap-editor blockquote {
+  border-left: 2px solid var(--color-gold);
+  padding-left: 0.75rem;
+  font-style: normal;
+  color: var(--adm-text-muted);
+}
+.admin-shell .tiptap-editor code {
+  background: var(--adm-surface-2);
+  color: var(--adm-text);
+  padding: 0 0.25rem;
+  border-radius: 2px;
+}
+.admin-shell .tiptap-editor strong {
+  color: var(--adm-text);
+}
+.admin-shell .tiptap-editor em {
+  color: var(--adm-text);
+}
+.admin-shell .tiptap-editor .ProseMirror-placeholder,
+.admin-shell .tiptap-editor p.is-editor-empty::before {
+  color: var(--adm-text-muted);
 }
