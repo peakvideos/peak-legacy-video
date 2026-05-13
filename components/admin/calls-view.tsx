@@ -93,7 +93,8 @@ function CallRow({ lead }: { lead: LeadRow }) {
         }
       }}
       className={cn(
-        "group grid grid-cols-[80px_1fr_auto] gap-3.5 px-6 py-3 border-b border-(--adm-border) cursor-pointer transition-colors items-start relative",
+        "group grid gap-3 px-4 sm:px-6 py-3 border-b border-(--adm-border) cursor-pointer transition-colors items-start relative",
+        "grid-cols-[56px_1fr_auto] sm:grid-cols-[80px_1fr_auto]",
         selected ? "bg-(--adm-selected)" : "hover:bg-(--adm-hover)",
       )}
     >
@@ -104,25 +105,31 @@ function CallRow({ lead }: { lead: LeadRow }) {
         <span className="opacity-70 tracking-normal">30 min</span>
       </div>
       <div className="min-w-0 flex items-start gap-3">
-        <Avatar first={lead.firstName} last={lead.lastName} size={28} />
-        <div className="min-w-0">
-          <div className="inline-flex items-center gap-1.5 font-heading text-[0.6rem] uppercase tracking-[0.14em] mb-1 text-gold">
+        <div className="hidden sm:block shrink-0">
+          <Avatar first={lead.firstName} last={lead.lastName} size={28} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 font-heading text-[0.6rem] uppercase tracking-[0.14em] mb-1 text-gold">
             <Calendar className="size-3" />
-            Discovery call
+            <span>Discovery call</span>
             <PackageBadge pkg={lead.packageInterest} />
           </div>
-          <div className="text-sm text-(--adm-text) leading-snug">
-            {lead.firstName} {lead.lastName} · {PKG_LABELS[lead.packageInterest]} ·{" "}
-            {lead.phone || "phone TBD"}
+          <div className="text-sm text-(--adm-text) leading-snug truncate">
+            {lead.firstName} {lead.lastName}
+          </div>
+          <div className="text-xs text-(--adm-text-muted) truncate mt-0.5">
+            {PKG_LABELS[lead.packageInterest]} · {lead.phone || "phone TBD"}
           </div>
           {lead.notes && (
-            <div className="text-xs text-(--adm-text-muted) truncate mt-0.5">{lead.notes}</div>
+            <div className="text-xs text-(--adm-text-muted) truncate mt-0.5">
+              {lead.notes}
+            </div>
           )}
         </div>
       </div>
       <div
         className={cn(
-          "flex items-center gap-0.5 pt-0.5 transition-opacity",
+          "flex items-center gap-0.5 pt-0.5 transition-opacity shrink-0",
           selected
             ? "opacity-100"
             : "opacity-100 md:opacity-0 md:group-hover:opacity-100",

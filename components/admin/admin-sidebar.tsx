@@ -28,6 +28,7 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { ThemeToggle } from "./theme-toggle";
@@ -133,19 +134,22 @@ export function AdminSidebar({
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-(--adm-border)">
-        <Link
-          href="/admin"
-          onClick={closeMobile}
-          className="flex items-center gap-2 px-2 py-1.5 font-heading text-[0.7rem] uppercase tracking-[0.18em] text-gold group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-          title="Peak Studios CO · Studio"
-        >
-          <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-gold/15 border border-gold/40 text-gold font-heading text-sm">
-            P
-          </span>
-          <span className="truncate group-data-[collapsible=icon]:hidden">
-            Peak Studios CO
-          </span>
-        </Link>
+        <div className="flex items-center gap-1 group-data-[collapsible=icon]:flex-col group-data-[collapsible=icon]:gap-1">
+          <Link
+            href="/admin"
+            onClick={closeMobile}
+            className="flex items-center gap-2 flex-1 min-w-0 px-1 py-1 font-heading text-[0.7rem] uppercase tracking-[0.18em] text-gold group-data-[collapsible=icon]:flex-none group-data-[collapsible=icon]:px-0"
+            title="Peak Studios CO · Studio"
+          >
+            <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-md bg-gold/15 border border-gold/40 text-gold font-heading text-sm">
+              P
+            </span>
+            <span className="truncate group-data-[collapsible=icon]:hidden">
+              Peak Studios CO
+            </span>
+          </Link>
+          <SidebarTrigger className="shrink-0 text-(--adm-text-muted) hover:text-(--adm-text) hover:bg-(--adm-hover)" />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         {SECTIONS.map((section) => (

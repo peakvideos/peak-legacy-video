@@ -54,9 +54,9 @@ export default async function AdminLayout({
       <TooltipProvider delayDuration={300}>
         <SidebarProvider defaultOpen={sidebarOpen} className="h-screen">
           <AdminSidebar counts={counts} userEmail={session.user.email ?? ""} />
-          <SidebarInset className="bg-(--adm-page) min-h-0">
+          <SidebarInset className="bg-(--adm-page) min-h-0 min-w-0">
             <MobileSidebarTrigger />
-            <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-hidden">
               {children}
             </div>
           </SidebarInset>

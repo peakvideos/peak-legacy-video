@@ -259,9 +259,13 @@
    editor renders email body content with the Cardo serif (so authors see
    roughly what recipients will read), but the chrome colors flip with the
    admin theme. The brand serif also opts back out of the admin shell's
-   tabular figures + stylistic alternates — they're for UI/data, not prose. */
-.admin-shell .tiptap-editor,
-.admin-shell .email-preview-shell {
+   tabular figures + stylistic alternates — they're for UI/data, not prose.
+
+   Note: `.email-preview-shell` is intentionally NOT included here. The
+   preview frame represents the recipient's inbox view and must always
+   render in email colors (dark text on white), not the operator's admin
+   theme. Its styles come from EMAIL_BASE_CSS instead. */
+.admin-shell .tiptap-editor {
   color: var(--adm-text);
   font-family: var(--font-cardo), Georgia, serif;
   font-variant-numeric: normal;

@@ -33,16 +33,6 @@ export function ClosedLeads({
   const heirloomCount = paid.filter((l) => l.packageInterest === "heirloom")
     .length;
   const legacyCount = paid.filter((l) => l.packageInterest === "legacy").length;
-  const avgDaysToClose =
-    paid.length > 0
-      ? Math.round(
-          paid.reduce(
-            (sum, l) =>
-              sum + (l.updatedAt.getTime() - l.createdAt.getTime()) / DAY_MS,
-            0,
-          ) / paid.length,
-        )
-      : null;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -68,11 +58,11 @@ export function ClosedLeads({
       </div>
 
       {tab === "paid" && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-6 py-4 bg-(--adm-surface-2) border-b border-(--adm-border)">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 px-6 py-4 bg-(--adm-surface-2) border-b border-(--adm-border)">
           <Stat
             label="Lifetime revenue"
             value={`$${revenue.toLocaleString()}`}
-            sub="CAD · paid via Wave"
+            sub="CAD"
             tone="gold"
           />
           <Stat
@@ -84,11 +74,6 @@ export function ClosedLeads({
             label="The Legacy"
             value={legacyCount.toString()}
             sub="$2,500 ea"
-          />
-          <Stat
-            label="Avg time to close"
-            value={avgDaysToClose != null ? `${avgDaysToClose} days` : "—"}
-            sub="form submit → paid"
           />
         </div>
       )}

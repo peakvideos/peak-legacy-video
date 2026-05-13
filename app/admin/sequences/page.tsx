@@ -104,7 +104,7 @@ export default async function SequencesPage() {
   ]);
 
   return (
-    <div className="flex-1 overflow-auto px-6 py-6 space-y-6">
+    <div className="flex-1 min-w-0 overflow-auto px-4 sm:px-6 py-6 space-y-6">
       <header>
         <h1 className="text-(--adm-text) text-2xl mb-1">Email sequences</h1>
         <p className="text-(--adm-text-muted) text-xs">
@@ -112,7 +112,7 @@ export default async function SequencesPage() {
         </p>
       </header>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Stat label="Pending" value={pendingCount[0]?.value ?? 0} />
         <Stat label="Sent (last 7d)" value={sentLast7dCount[0]?.value ?? 0} />
         <Stat
@@ -136,7 +136,7 @@ export default async function SequencesPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="mt-4">
+        <TabsContent value="pending" className="mt-4 min-w-0">
           <Section
             empty="No drip emails scheduled."
             rows={pendingRows.map((r) => ({
@@ -220,26 +220,42 @@ function Section({
         <TableHeader>
           <TableRow>
             <TableHead>Lead</TableHead>
-            <TableHead>Email</TableHead>
+            <TableHead className="hidden lg:table-cell">Email</TableHead>
             <TableHead>Template</TableHead>
-            <TableHead>{timeHeader}</TableHead>
+            <TableHead className="hidden sm:table-cell">{timeHeader}</TableHead>
             <TableHead>Status</TableHead>
-            {showError && <TableHead>Error</TableHead>}
+            {showError && (
+              <TableHead className="hidden md:table-cell">Error</TableHead>
+            )}
             <TableHead className="text-right">&nbsp;</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {rows.map((r) => (
             <TableRow key={r.id}>
-              <TableCell className="font-medium text-(--adm-text) whitespace-nowrap">
-                {r.leadFirstName} {r.leadLastName}
+              <TableCell className="max-w-[200px]">
+                <Link
+                  href={`/admin/leads/${r.leadId}`}
+                  className="font-medium text-(--adm-text) hover:text-gold truncate block"
+                >
+                  {r.leadFirstName} {r.leadLastName}
+                </Link>
+                <a
+                  href={`mailto:${r.leadEmail}`}
+                  className="text-xs text-(--adm-text-muted) hover:text-gold truncate block lg:hidden"
+                >
+                  {r.leadEmail}
+                </a>
+                <span className="text-xs text-(--adm-text-muted) truncate block sm:hidden">
+                  {r.whenLabel}
+                </span>
               </TableCell>
-              <TableCell className="text-(--adm-text-muted)">
+              <TableCell className="text-(--adm-text-muted) hidden lg:table-cell">
                 <a href={`mailto:${r.leadEmail}`} className="hover:text-gold">
                   {r.leadEmail}
                 </a>
               </TableCell>
-              <TableCell className="whitespace-nowrap max-w-[260px]">
+              <TableCell className="max-w-[180px] sm:max-w-[260px]">
                 <Link
                   href={`/admin/settings/templates/${r.templateId}`}
                   className="font-heading text-(--adm-text) hover:text-gold truncate block"
@@ -250,14 +266,14 @@ function Section({
                   {r.templateSubject}
                 </span>
               </TableCell>
-              <TableCell className="text-sm text-(--adm-text-muted) whitespace-nowrap">
+              <TableCell className="text-sm text-(--adm-text-muted) whitespace-nowrap hidden sm:table-cell">
                 {r.whenLabel}
               </TableCell>
               <TableCell>
                 <StatusBadge status={r.status} attempts={r.attempts} />
               </TableCell>
               {showError && (
-                <TableCell className="text-xs text-(--adm-text-muted) max-w-[260px] truncate">
+                <TableCell className="text-xs text-(--adm-text-muted) max-w-[260px] truncate hidden md:table-cell">
                   {r.lastError ?? "—"}
                 </TableCell>
               )}
