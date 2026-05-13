@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Peak Studios CO — Legacy Video | Victoria & Vancouver, BC</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alata&family=Cardo:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    /* ═══════════════════════════════════════════
+       BRAND TOKENS
+    ═══════════════════════════════════════════ */
+    :root {
+      --forest:      #233415;
+      --forest-deep: #1a2710;
+      --gold:        #CEA64A;
+      --gold-light:  #e0b85a;
+      --moss:        #93A888;
+      --blush:       #D8A48F;
+      --tofino:      #597B7E;
+      --sky:         #C7D8E4;
+      --sky-light:   #EDF3F7;
+      --white:       #FFFFFF;
+      --off-white:   #F8F6F1;
+      --text-dark:   #1a1a1a;
+      --text-mid:    #444;
+      --error:       #c0392b;
+      --success:     #27ae60;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Cardo', Georgia, serif; color: var(--text-dark); background: var(--off-white); overflow-x: hidden; }
+    h1, h2, h3, h4, .alata { font-family: 'Alata', sans-serif; }
+    h1 { font-size: clamp(2.2rem, 5.5vw, 4rem); line-height: 1.1; }
+    h2 { font-size: clamp(1.6rem, 3.5vw, 2.5rem); line-height: 1.2; }
+    h3 { font-size: clamp(1rem, 2vw, 1.2rem); }
+    p  { line-height: 1.78; font-size: clamp(0.98rem, 1.4vw, 1.08rem); }
+    img { max-width: 100%; display: block; }
+    a  { text-decoration: none; }
+
+    /* ═══════════════════════════════════════════
+       ANIMATIONS
+    ═══════════════════════════════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(60px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-up  { animation: fadeUp 0.9s ease both; }
+    .delay-1  { animation-delay: 0.15s; }
+    .delay-2  { animation-delay: 0.3s; }
+    .delay-3  { animation-delay: 0.45s; }
+    .delay-4  { animation-delay: 0.6s; }
+    .reveal   { opacity: 0; transform: translateY(36px); transition: opacity 0.75s ease, transform 0.75s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ═══════════════════════════════════════════
+       NAV
+    ═══════════════════════════════════════════ */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 2.5rem;
+      background: rgba(26, 39, 16, 0.95);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(206,166,74,0.25);
+    }
+    .nav-brand { color: var(--white); font-family: 'Alata', sans-serif; font-size: 0.95rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    .nav-brand span { color: var(--gold); }
+    .nav-cta {
+      background: var(--gold); color: var(--forest);
+      font-family: 'Alata', sans-serif; font-size: 0.8rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0.55rem 1.3rem; border: none; cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+    /* ═══════════════════════════════════════════
+       SHARED BUTTONS
+    ═══════════════════════════════════════════ */
+    .btn-primary {
+      background: var(--gold); color: var(--forest);
+      font-family: 'Alata', sans-serif; font-size: 0.88rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 1rem 2.2rem; border: none; cursor: pointer;
+      display: inline-block; transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 18px rgba(206,166,74,0.28);
+    }
+    .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(206,166,74,0.38); }
+    .btn-ghost {
+      color: var(--sky); font-family: 'Cardo', serif; font-size: 1rem;
+      font-style: italic; border-bottom: 1px solid rgba(199,216,228,0.4);
+      padding-bottom: 2px; transition: color 0.2s, border-color 0.2s; cursor: pointer;
+    }
+    .btn-ghost:hover { color: var(--white); border-color: var(--white); }
+    .btn-outline {
+      display: inline-block; padding: 0.9rem 2rem;
+      font-family: 'Alata', sans-serif; font-size: 0.85rem;
+      letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+      color: var(--forest); border: 2px solid var(--forest);
+      background: transparent; transition: background 0.2s, color 0.2s;
+    }
+    .btn-outline:hover { background: var(--forest); color: var(--white); }
+
+    /* ═══════════════════════════════════════════
+       GOLD DIVIDER
+    ═══════════════════════════════════════════ */
+    .gold-bar { height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+    /* ═══════════════════════════════════════════
+       HERO
+    ═══════════════════════════════════════════ */
+    #hero {
+      min-height: 100vh; background: var(--forest-deep);
+      display: flex; flex-direction: column; justify-content: center;
+      position: relative; overflow: hidden; padding: 9rem 2.5rem 5rem;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 60% at 72% 40%, rgba(147,168,136,0.13) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 18% 82%, rgba(206,166,74,0.08) 0%, transparent 50%);
+    }
+    .hero-inner { max-width: 780px; position: relative; z-index: 2; }
+    .eyebrow {
+      font-family: 'Alata', sans-serif; font-size: 0.75rem;
+      letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold);
+      margin-bottom: 1.4rem; display: flex; align-items: center; gap: 0.8rem;
+    }
+    .eyebrow::before { content: ''; display: block; width: 30px; height: 1px; background: var(--gold); }
+    #hero h1 { color: var(--white); margin-bottom: 1.5rem; }
+    #hero h1 em { font-style: normal; color: var(--gold); }
+    .hero-sub { color: var(--sky); font-size: clamp(1rem, 1.8vw, 1.18rem); max-width: 560px; margin-bottom: 2.6rem; line-height: 1.82; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; }
+    .hero-location { margin-top: 3.2rem; font-family: 'Alata', sans-serif; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--moss); }
+
+    /* ═══════════════════════════════════════════
+       HOOK
+    ═══════════════════════════════════════════ */
+    #hook { background: var(--off-white); padding: 6rem 2.5rem; }
+    .hook-inner { max-width: 700px; margin: 0 auto; text-align: center; }
+    #hook h2 { color: var(--forest); margin-bottom: 1.8rem; }
+    #hook p { color: var(--text-mid); margin-bottom: 1.3rem; }
+    .hook-closer { font-style: italic; font-size: 1.18rem !important; color: var(--forest) !important; }
+
+    /* ═══════════════════════════════════════════
+       HOW IT WORKS
+    ═══════════════════════════════════════════ */
+    #how { background: var(--forest); padding: 6rem 2.5rem; }
+    .section-inner { max-width: 960px; margin: 0 auto; }
+    .section-title { text-align: center; margin-bottom: 0.7rem; }
+    #how .section-title { color: var(--white); }
+    .section-sub { text-align: center; font-style: italic; margin-bottom: 3.5rem; }
+    #how .section-sub { color: var(--moss); }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.6rem; }
+    .step { border-left: 2px solid var(--gold); padding: 1.3rem 1.5rem; background: rgba(255,255,255,0.04); transition: background 0.25s; }
+    .step:hover { background: rgba(255,255,255,0.07); }
+    .step-num { font-family: 'Alata', sans-serif; font-size: 0.68rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+    .step h3 { color: var(--white); margin-bottom: 0.5rem; }
+    .step p { color: var(--sky); font-size: 0.93rem; line-height: 1.7; }
+
+    /* ═══════════════════════════════════════════
+       PACKAGES
+    ═══════════════════════════════════════════ */
+    #packages { background: var(--sky-light); padding: 6rem 2.5rem; }
+    #packages .section-title { color: var(--forest); }
+    #packages .section-sub { color: var(--tofino); }
+    .pkg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 0; }
+    @media (max-width: 640px) { .pkg-grid { grid-template-columns: 1fr; } }
+    .pkg-card { padding: 2.4rem 2rem; position: relative; transition: transform 0.3s, box-shadow 0.3s; }
+    .pkg-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(35,52,21,0.14); }
+    .pkg-card.legacy { background: var(--white); border: 1px solid rgba(35,52,21,0.1); }
+    .pkg-card.heirloom { background: var(--forest); border: 2px solid var(--gold); }
+    .pkg-badge {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--gold); color: var(--forest);
+      font-family: 'Alata', sans-serif; font-size: 0.68rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.28rem 1rem; white-space: nowrap;
+    }
+    .pkg-label { font-family: 'Alata', sans-serif; font-size: 0.78rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .legacy .pkg-label { color: var(--forest); }
+    .heirloom .pkg-label { color: var(--gold); }
+    .pkg-price { font-family: 'Alata', sans-serif; font-size: 2.3rem; margin-bottom: 0.25rem; }
+    .legacy .pkg-price { color: var(--forest); }
+    .heirloom .pkg-price { color: var(--white); }
+    .pkg-sup { font-size: 1rem; vertical-align: super; margin-right: 2px; }
+    .pkg-cad { font-family: 'Cardo', serif; font-size: 0.85rem; font-style: italic; }
+    .legacy .pkg-cad { color: var(--tofino); }
+    .heirloom .pkg-cad { color: var(--moss); }
+    .pkg-hr { height: 1px; margin: 1.3rem 0; }
+    .legacy .pkg-hr { background: rgba(35,52,21,0.1); }
+    .heirloom .pkg-hr { background: rgba(206,166,74,0.3); }
+    .pkg-also { font-family: 'Alata', sans-serif; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.7rem; }
+    .pkg-features { list-style: none; margin-bottom: 1.8rem; }
+    .pkg-features li { display: flex; align-items: flex-start; gap: 0.7rem; margin-bottom: 0.75rem; font-size: 0.93rem; line-height: 1.5; }
+    .legacy .pkg-features li { color: var(--text-mid); }
+    .heirloom .pkg-features li { color: var(--sky); }
+    .pkg-features li::before { content: '—'; flex-shrink: 0; color: var(--gold); font-family: 'Alata', sans-serif; }
+    .pkg-btn {
+      display: block; width: 100%; text-align: center; padding: 0.92rem;
+      font-family: 'Alata', sans-serif; font-size: 0.8rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      border: none; cursor: pointer; transition: background 0.2s, transform 0.15s;
+    }
+    .legacy .pkg-btn { background: var(--forest); color: var(--white); }
+    .legacy .pkg-btn:hover { background: var(--forest-deep); transform: translateY(-1px); }
+    .heirloom .pkg-btn { background: var(--gold); color: var(--forest); }
+    .heirloom .pkg-btn:hover { background: var(--gold-light); transform: translateY(-1px); }
+
+    /* ═══════════════════════════════════════════
+       TRUST
+    ═══════════════════════════════════════════ */
+    #trust { background: var(--off-white); padding: 6rem 2.5rem; }
+    .trust-inner { max-width: 580px; margin: 0 auto; text-align: center; }
+    #trust h2 { color: var(--forest); margin-bottom: 1.3rem; }
+    #trust p { color: var(--text-mid); margin-bottom: 2.2rem; font-size: 1.08rem; }
+
+    /* ═══════════════════════════════════════════
+       ABOUT
+    ═══════════════════════════════════════════ */
+    #about { background: var(--forest-deep); padding: 6rem 2.5rem; position: relative; overflow: hidden; }
+    .about-bg { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 60% 80% at 90% 50%, rgba(147,168,136,0.08) 0%, transparent 60%); }
+    .about-inner { max-width: 680px; position: relative; z-index: 2; }
+    #about h2 { color: var(--white); margin-bottom: 1.5rem; }
+    #about p { color: var(--sky); margin-bottom: 1.2rem; line-height: 1.85; }
+
+    /* ═══════════════════════════════════════════
+       FAQ
+    ═══════════════════════════════════════════ */
+    #faq { background: var(--off-white); padding: 6rem 2.5rem; }
+    .faq-inner { max-width: 720px; margin: 0 auto; }
+    #faq .section-title { color: var(--forest); text-align: center; margin-bottom: 0.8rem; }
+    #faq .section-sub { color: var(--tofino); margin-bottom: 3rem; }
+    .faq-item { border-bottom: 1px solid rgba(35,52,21,0.12); }
+    .faq-q {
+      width: 100%; background: none; border: none; cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.3rem 0; text-align: left;
+      font-family: 'Alata', sans-serif; font-size: 0.97rem;
+      color: var(--forest); letter-spacing: 0.02em;
+      transition: color 0.2s;
+    }
+    .faq-q:hover { color: var(--gold); }
+    .faq-icon { font-size: 1.4rem; color: var(--gold); flex-shrink: 0; margin-left: 1rem; transition: transform 0.3s; }
+    .faq-item.open .faq-icon { transform: rotate(45deg); }
+    .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; }
+    .faq-item.open .faq-a { max-height: 300px; }
+    .faq-a p { padding: 0 0 1.3rem; color: var(--text-mid); line-height: 1.75; font-size: 0.98rem; }
+
+    /* ═══════════════════════════════════════════
+       FOOTER CTA
+    ═══════════════════════════════════════════ */
+    #footer-cta { background: var(--forest); padding: 6rem 2.5rem; text-align: center; position: relative; overflow: hidden; }
+    .footer-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(206,166,74,0.09) 0%, transparent 60%); }
+    .footer-cta-inner { max-width: 620px; margin: 0 auto; position: relative; z-index: 2; }
+    #footer-cta h2 { color: var(--white); margin-bottom: 1.1rem; }
+    #footer-cta p { color: var(--sky); margin-bottom: 2.6rem; font-size: 1.08rem; line-height: 1.8; }
+    .footer-actions { display: flex; flex-direction: column; align-items: center; gap: 1.1rem; }
+    .footer-link { color: var(--moss); font-style: italic; font-size: 1rem; cursor: pointer; border-bottom: 1px solid transparent; transition: color 0.2s, border-color 0.2s; }
+    .footer-link:hover { color: var(--gold); border-color: var(--gold); }
+
+    /* ═══════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════ */
+    footer { background: var(--forest-deep); padding: 2rem 2.5rem; text-align: center; border-top: 1px solid rgba(206,166,74,0.2); }
+    footer p { font-family: 'Alata', sans-serif; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--moss); line-height: 2; }
+    footer span { color: var(--gold); }
+
+    /* ═══════════════════════════════════════════
+       MODAL OVERLAY
+    ═══════════════════════════════════════════ */
+    #modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(20,30,12,0.82);
+      backdrop-filter: blur(6px);
+      animation: fadeIn 0.25s ease;
+      overflow-y: auto; padding: 2rem 1rem;
+    }
+    #modal-overlay.active { display: flex; align-items: flex-start; justify-content: center; }
+    .modal {
+      background: var(--white); max-width: 580px; width: 100%;
+      margin: auto; position: relative;
+      animation: slideUp 0.35s ease;
+      border-top: 4px solid var(--gold);
+    }
+    .modal-header { background: var(--forest); padding: 1.8rem 2rem; }
+    .modal-header h3 { color: var(--white); font-size: 1.2rem; margin-bottom: 0.3rem; }
+    .modal-header p { color: var(--sky); font-size: 0.9rem; font-family: 'Cardo', serif; font-style: italic; }
+    .modal-close {
+      position: absolute; top: 1.2rem; right: 1.4rem;
+      background: none; border: none; cursor: pointer;
+      color: var(--sky); font-size: 1.6rem; line-height: 1;
+      transition: color 0.2s;
+    }
+    .modal-close:hover { color: var(--gold); }
+    .modal-body { padding: 2rem; }
+
+    /* ═══════════════════════════════════════════
+       FORM STEPS
+    ═══════════════════════════════════════════ */
+    .step-indicator { display: flex; gap: 0.5rem; margin-bottom: 1.8rem; }
+    .step-dot { height: 4px; flex: 1; background: rgba(35,52,21,0.12); transition: background 0.3s; }
+    .step-dot.active { background: var(--gold); }
+    .form-step { display: none; }
+    .form-step.active { display: block; }
+
+    /* ═══════════════════════════════════════════
+       FORM FIELDS
+    ═══════════════════════════════════════════ */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label {
+      display: block; font-family: 'Alata', sans-serif; font-size: 0.75rem;
+      letter-spacing: 0.12em; text-transform: uppercase; color: var(--forest);
+      margin-bottom: 0.45rem;
+    }
+    .form-group label .req { color: var(--gold); margin-left: 2px; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%; padding: 0.75rem 1rem;
+      border: 1.5px solid rgba(35,52,21,0.18);
+      font-family: 'Cardo', serif; font-size: 1rem; color: var(--text-dark);
+      background: var(--white); transition: border-color 0.2s;
+      appearance: none; -webkit-appearance: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { outline: none; border-color: var(--gold); }
+    .form-group select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23233415' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; padding-right: 2.5rem; }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .field-error { font-size: 0.8rem; color: var(--error); margin-top: 0.3rem; display: none; }
+    .form-group.has-error input,
+    .form-group.has-error select { border-color: var(--error); }
+    .form-group.has-error .field-error { display: block; }
+
+    /* ═══════════════════════════════════════════
+       CALENDAR PICKER
+    ═══════════════════════════════════════════ */
+    .calendar-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+    .cal-nav-btn { background: none; border: 1.5px solid rgba(35,52,21,0.18); cursor: pointer; padding: 0.4rem 0.8rem; font-size: 1rem; color: var(--forest); transition: border-color 0.2s, color 0.2s; }
+    .cal-nav-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .cal-month-label { font-family: 'Alata', sans-serif; font-size: 0.9rem; letter-spacing: 0.08em; color: var(--forest); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 1.4rem; }
+    .cal-day-header { font-family: 'Alata', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; text-align: center; color: var(--moss); padding: 0.3rem 0; }
+    .cal-day {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      font-family: 'Cardo', serif; font-size: 0.9rem; cursor: pointer;
+      border: 1.5px solid transparent; transition: all 0.15s;
+    }
+    .cal-day:hover:not(.disabled):not(.empty) { border-color: var(--gold); color: var(--gold); }
+    .cal-day.selected { background: var(--forest); color: var(--white); border-color: var(--forest); }
+    .cal-day.disabled { color: rgba(35,52,21,0.2); cursor: not-allowed; }
+    .cal-day.empty { cursor: default; }
+    .cal-day.today { font-weight: bold; color: var(--gold); }
+
+    /* TIME SLOTS */
+    .time-label { font-family: 'Alata', sans-serif; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--forest); margin-bottom: 0.8rem; }
+    .time-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 0.5rem; }
+    .time-slot {
+      padding: 0.55rem; text-align: center; font-family: 'Cardo', serif; font-size: 0.9rem;
+      border: 1.5px solid rgba(35,52,21,0.18); cursor: pointer; color: var(--forest);
+      transition: all 0.15s; background: var(--white);
+    }
+    .time-slot:hover { border-color: var(--gold); color: var(--gold); }
+    .time-slot.selected { background: var(--forest); color: var(--white); border-color: var(--forest); }
+    .no-date-msg { font-family: 'Cardo', serif; font-style: italic; color: var(--tofino); font-size: 0.95rem; padding: 0.5rem 0; }
+
+    /* ═══════════════════════════════════════════
+       MODAL FOOTER
+    ═══════════════════════════════════════════ */
+    .modal-footer { padding: 1.2rem 2rem 2rem; border-top: 1px solid rgba(35,52,21,0.08); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .modal-back { background: none; border: none; cursor: pointer; font-family: 'Cardo', serif; font-style: italic; font-size: 0.95rem; color: var(--tofino); transition: color 0.2s; }
+    .modal-back:hover { color: var(--forest); }
+    .modal-next {
+      background: var(--forest); color: var(--white); border: none; cursor: pointer;
+      font-family: 'Alata', sans-serif; font-size: 0.8rem; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 0.8rem 2rem;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .modal-next:hover { background: var(--forest-deep); transform: translateY(-1px); }
+    .modal-next.gold { background: var(--gold); color: var(--forest); }
+    .modal-next.gold:hover { background: var(--gold-light); }
+
+    /* SELECTED BOOKING SUMMARY */
+    .booking-summary {
+      background: rgba(35,52,21,0.04); border-left: 3px solid var(--gold);
+      padding: 1rem 1.2rem; margin-bottom: 1.4rem;
+      font-size: 0.93rem; color: var(--text-mid);
+    }
+    .booking-summary strong { font-family: 'Alata', sans-serif; color: var(--forest); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 0.4rem; }
+
+    /* ═══════════════════════════════════════════
+       CONFIRMATION SCREEN
+    ═══════════════════════════════════════════ */
+    .confirm-screen { text-align: center; padding: 1rem 0; }
+    .confirm-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .confirm-screen h3 { color: var(--forest); margin-bottom: 0.8rem; font-size: 1.4rem; }
+    .confirm-screen p { color: var(--text-mid); margin-bottom: 0.6rem; line-height: 1.7; }
+    .confirm-detail { background: var(--sky-light); padding: 1.2rem; margin: 1.2rem 0; text-align: left; }
+    .confirm-detail p { margin-bottom: 0.3rem; font-size: 0.95rem; }
+    .confirm-detail strong { color: var(--forest); font-family: 'Alata', sans-serif; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .confirm-note { font-size: 0.88rem !important; font-style: italic; color: var(--tofino) !important; }
+
+    /* ═══════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      nav { padding: 0.9rem 1.3rem; }
+      section { padding-left: 1.3rem !important; padding-right: 1.3rem !important; }
+      .steps { grid-template-columns: 1fr; }
+      .modal-body { padding: 1.4rem; }
+      .modal-footer { padding: 1rem 1.4rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ NAV ═══════════════ -->
+<nav>
+  <div class="nav-brand">Peak Studios <span>CO</span></div>
+  <button class="nav-cta" onclick="openModal('session')">Book Your Session</button>
+</nav>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+    <div class="eyebrow fade-up">Legacy Video &nbsp;·&nbsp; Victoria &amp; Vancouver, BC</div>
+    <h1 class="fade-up delay-1">Their stories deserve<br/>to live <em>forever.</em></h1>
+    <p class="hero-sub fade-up delay-2">Peak Studios CO creates beautiful, professional legacy films — capturing your loved one's life story in their own words, to be treasured by your family for generations.</p>
+    <div class="hero-actions fade-up delay-3">
+      <button class="btn-primary" onclick="openModal('session')">Reserve Your Time Today</button>
+      <span class="btn-ghost" onclick="openModal('questions')">Have questions? We'd love to chat.</span>
+    </div>
+    <p class="hero-location fade-up delay-4">Serving Victoria &amp; Vancouver, BC &nbsp;·&nbsp; Limited sessions available each month</p>
+  </div>
+</section>
+
+<div class="gold-bar"></div>
+
+<!-- ═══════════════ HOOK ═══════════════ -->
+<section id="hook">
+  <div class="hook-inner">
+    <h2 class="reveal">One day, you won't be able to ask them anymore.</h2>
+    <p class="reveal">There are stories inside your grandparents — about the life they lived before you were born, the hardships they overcame, the love that carried them through. Stories they've never fully told. And one day, quietly, those stories will be gone.</p>
+    <p class="reveal">Peak Studios CO exists for one reason: to make sure that doesn't happen.</p>
+    <p class="reveal">We come to your family with a professional two-camera setup, a warm and unhurried interview style, and questions designed to draw out the whole story — the funny moments, the hard ones, the ones that shaped who they are. Then we craft it all into a beautiful film your family will return to again and again.</p>
+    <p class="hook-closer reveal">This is not a home video. This is a legacy.</p>
+  </div>
+</section>
+
+<div class="gold-bar"></div>
+
+<!-- ═══════════════ HOW IT WORKS ═══════════════ -->
+<section id="how">
+  <div class="section-inner">
+    <h2 class="section-title reveal">Simple, thoughtful, and handled with care.</h2>
+    <p class="section-sub reveal">Here's what the experience looks like, start to finish.</p>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">Step 01</div>
+        <h3>Book Your Session</h3>
+        <p>Choose your package and reserve a date. We keep our calendar intentionally small so every family gets our full attention.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">Step 02</div>
+        <h3>We Come to You</h3>
+        <p>Our team arrives with a professional two-camera setup. We take care of everything — your loved one just needs to be themselves.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">Step 03</div>
+        <h3>The Interview</h3>
+        <p>Using our thoughtfully crafted questions, we gently guide your loved one through their whole life story — from childhood memories to the wisdom they want to pass on.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">Step 04</div>
+        <h3>We Craft Your Film</h3>
+        <p>We edit the footage into a beautiful, chapter-structured legacy film. Every detail is handled with respect and care.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">Step 05</div>
+        <h3>Yours Forever</h3>
+        <p>Your film is delivered digitally, ready to share with family near and far — and with The Heirloom package, preserved on a premium USB keepsake as well.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="gold-bar"></div>
+
+<!-- ═══════════════ PACKAGES ═══════════════ -->
+<section id="packages">
+  <div class="section-inner packages-inner">
+    <h2 class="section-title reveal">Choose the legacy that fits your family.</h2>
+    <p class="section-sub reveal">Two packages. Both crafted with the same care.</p>
+    <div class="pkg-grid">
+
+      <div class="pkg-card legacy reveal">
+        <div class="pkg-label">The Legacy</div>
+        <div class="pkg-price"><span class="pkg-sup">$</span>2,500 <span class="pkg-cad">CAD</span></div>
+        <div class="pkg-hr"></div>
+        <ul class="pkg-features">
+          <li>Professional 2-camera interview setup</li>
+          <li>Thoughtfully crafted life-story questions</li>
+          <li>Full interview session (approx. 60–90 min)</li>
+          <li>Edited legacy film (20–30 minutes)</li>
+          <li>Chapter titles and structure</li>
+          <li>Digital delivery — easy to download and share</li>
+        </ul>
+        <button class="pkg-btn" onclick="openModal('session')">Book The Legacy</button>
+      </div>
+
+      <div class="pkg-card heirloom reveal">
+        <div class="pkg-badge">Most Popular</div>
+        <div class="pkg-label">The Heirloom</div>
+        <div class="pkg-price"><span class="pkg-sup">$</span>3,500 <span class="pkg-cad">CAD</span></div>
+        <div class="pkg-hr"></div>
+        <p class="pkg-also">Everything in The Legacy, plus:</p>
+        <ul class="pkg-features">
+          <li>Photo &amp; memorabilia integration — old photos and letters woven into the film</li>
+          <li>Extended edit (40–60 minutes)</li>
+          <li>3–5 min shareable highlight reel</li>
+          <li>Premium USB keepsake — beautifully packaged</li>
+        </ul>
+        <button class="pkg-btn" onclick="openModal('session')">Book The Heirloom</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="gold-bar"></div>
+
+<!-- ═══════════════ TRUST ═══════════════ -->
+<section id="trust">
+  <div class="trust-inner">
+    <h2 class="reveal">There's never a wrong time to start.</h2>
+    <p class="reveal">Whenever you're ready, we're here. Whether you're planning ahead or feeling a quiet nudge to do this soon, we're happy to answer questions and walk you through the process — no rush, no pressure.</p>
+    <button class="btn-outline reveal" onclick="openModal('questions')">Get in Touch</button>
+  </div>
+</section>
+
+<div class="gold-bar"></div>
+
+<!-- ═══════════════ ABOUT ═══════════════ -->
+<section id="about">
+  <div class="about-bg"></div>
+  <div class="about-inner">
+    <div class="eyebrow reveal">About Peak Studios CO</div>
+    <h2 class="reveal">We believe every life is worth preserving.</h2>
+    <p class="reveal">At Peak Studios CO, we've spent years telling stories through the lens — and we know better than most how powerful a well-crafted film can be. Legacy video is a natural extension of that belief: that the most important stories aren't always the loudest ones, and that the people we love most deserve to have their story told with the same care and craft we bring to everything we do.</p>
+    <p class="reveal">We are based in Victoria and Vancouver, BC, and we approach every legacy session with professionalism, patience, and genuine heart. For us, this is some of the most meaningful work we do.</p>
+  </div>
+</section>
+
+<div class="gold-bar"></div>
+
+<!-- ═══════════════ FAQ ═══════════════ -->
+<section id="faq">
+  <div class="faq-inner">
+    <h2 class="section-title reveal">Common questions</h2>
+    <p class="section-sub reveal">Everything you need to know before booking.</p>
+
+    <div class="faq-item reveal">
+      <button class="faq-q">Where do you film? <span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>We come to you — your loved one's home, a family member's home, or another comfortable location of your choosing in the Victoria or Vancouver area.</p></div>
+    </div>
+    <div class="faq-item reveal">
+      <button class="faq-q">How long does the session take? <span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>The interview itself is typically 60–90 minutes. We arrive early to set up and stay a little after to pack down — the whole visit is usually around 2–3 hours.</p></div>
+    </div>
+    <div class="faq-item reveal">
+      <button class="faq-q">What if my loved one is nervous or shy? <span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>This is very common, and it's something we're experienced with. Our interviewers are warm, patient, and skilled at putting people at ease. Most subjects forget the cameras are there within the first few minutes.</p></div>
+    </div>
+    <div class="faq-item reveal">
+      <button class="faq-q">How long until we receive the film? <span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>You'll receive your completed legacy film within 3–4 weeks of your session.</p></div>
+    </div>
+    <div class="faq-item reveal">
+      <button class="faq-q">Can we add more people to the interview? <span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>The session is designed around one primary subject, but we can discuss accommodating a couple or adding a short segment with a family member. Just ask us.</p></div>
+    </div>
+    <div class="faq-item reveal">
+      <button class="faq-q">Do you travel outside Victoria and Vancouver? <span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>We occasionally travel for sessions. Reach out and we can discuss options.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FOOTER CTA ═══════════════ -->
+<section id="footer-cta">
+  <div class="footer-glow"></div>
+  <div class="footer-cta-inner">
+    <h2 class="reveal">Their memories belong to your whole family — for generations to come.</h2>
+    <p class="reveal">We'd love to help your family capture one of them. Reserve your session today and we'll take care of everything else.</p>
+    <div class="footer-actions reveal">
+      <button class="btn-primary" onclick="openModal('session')">Reserve Your Time Today</button>
+      <span class="footer-link" onclick="openModal('questions')">Have questions? We'd love to chat.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer>
+  <p><span>Peak Studios CO</span> &nbsp;·&nbsp; Legacy Video &nbsp;·&nbsp; Victoria &amp; Vancouver, BC, Canada &nbsp;·&nbsp; <span>peaklegacyvideos@gmail.com</span></p>
+  <p style="margin-top:0.4rem;">© 2025 Peak Studios CO. All rights reserved.</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════
+     BOOKING MODAL
+═══════════════════════════════════════════ -->
+<div id="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal">
+
+    <div class="modal-header">
+      <h3 id="modal-title">Book Your Discovery Call</h3>
+      <p id="modal-subtitle">30 minutes · Monday–Friday · Pacific Time</p>
+      <button class="modal-close" onclick="closeModal()" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Step dots -->
+      <div class="step-indicator">
+        <div class="step-dot active" id="dot-1"></div>
+        <div class="step-dot" id="dot-2"></div>
+        <div class="step-dot" id="dot-3"></div>
+      </div>
+
+      <!-- ── STEP 1: Lead Form ── -->
+      <div class="form-step active" id="step-1">
+        <div class="form-row">
+          <div class="form-group" id="fg-first">
+            <label>First Name <span class="req">*</span></label>
+            <input type="text" id="f-first" placeholder="Jane"/>
+            <div class="field-error">Please enter your first name.</div>
+          </div>
+          <div class="form-group" id="fg-last">
+            <label>Last Name <span class="req">*</span></label>
+            <input type="text" id="f-last" placeholder="Smith"/>
+            <div class="field-error">Please enter your last name.</div>
+          </div>
+        </div>
+        <div class="form-group" id="fg-email">
+          <label>Email Address <span class="req">*</span></label>
+          <input type="email" id="f-email" placeholder="jane@example.com"/>
+          <div class="field-error">Please enter a valid email address.</div>
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="f-phone" placeholder="+1 (250) 000-0000"/>
+        </div>
+        <div class="form-group">
+          <label>Which package interests you?</label>
+          <select id="f-package">
+            <option value="">Not sure yet</option>
+            <option value="legacy">The Legacy — $2,500 CAD</option>
+            <option value="heirloom">The Heirloom — $3,500 CAD</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Anything you'd like us to know?</label>
+          <textarea id="f-notes" placeholder="Tell us a little about who we'll be filming, or any questions you have…"></textarea>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: Calendar ── -->
+      <div class="form-step" id="step-2">
+        <p style="font-size:0.9rem;color:var(--text-mid);margin-bottom:1.2rem;font-style:italic;">Select a date and time for your 30-minute discovery call. All times are Pacific Time (PT).</p>
+
+        <div class="calendar-nav">
+          <button class="cal-nav-btn" onclick="changeMonth(-1)">&#8249;</button>
+          <span class="cal-month-label" id="cal-month-label"></span>
+          <button class="cal-nav-btn" onclick="changeMonth(1)">&#8250;</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+
+        <div id="time-section" style="display:none;">
+          <p class="time-label" id="time-label"></p>
+          <div class="time-slots" id="time-slots"></div>
+        </div>
+        <p class="no-date-msg" id="no-date-msg">Please select a date above to see available times.</p>
+      </div>
+
+      <!-- ── STEP 3: Review & Confirm ── -->
+      <div class="form-step" id="step-3">
+        <p style="font-size:0.92rem;color:var(--text-mid);margin-bottom:1.2rem;">Please review your booking details before confirming.</p>
+        <div class="booking-summary" id="booking-summary"></div>
+        <div class="form-group">
+          <label style="display:flex;align-items:flex-start;gap:0.6rem;text-transform:none;letter-spacing:0;font-size:0.88rem;cursor:pointer;">
+            <input type="checkbox" id="f-consent" style="width:auto;margin-top:3px;flex-shrink:0;"/>
+            I agree to be contacted by Peak Studios CO regarding my booking enquiry.
+          </label>
+        </div>
+        <p style="font-size:0.82rem;color:var(--tofino);font-style:italic;">We'll send a confirmation email and one of our team will be in touch shortly.</p>
+      </div>
+
+      <!-- ── CONFIRMATION ── -->
+      <div class="form-step" id="step-confirm">
+        <div class="confirm-screen">
+          <div class="confirm-icon">🎬</div>
+          <h3>You're booked in!</h3>
+          <p>Thank you — we're looking forward to speaking with you.</p>
+          <div class="confirm-detail" id="confirm-detail"></div>
+          <p class="confirm-note">Check your email for a confirmation. If you need to reschedule, just reply to that email.</p>
+        </div>
+      </div>
+
+    </div><!-- end modal-body -->
+
+    <div class="modal-footer" id="modal-footer">
+      <button class="modal-back" id="btn-back" onclick="prevStep()" style="visibility:hidden;">← Back</button>
+      <button class="modal-next" id="btn-next" onclick="nextStep()">Next →</button>
+    </div>
+
+  </div><!-- end .modal -->
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+/* ── Scroll Reveal ── */
+const reveals = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), 70);
+      revealObserver.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+reveals.forEach(el => revealObserver.observe(el));
+
+/* ── FAQ Accordion ── */
+document.querySelectorAll('.faq-q').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const item = btn.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  });
+});
+
+/* ════════════════════════════════════════
+   MODAL STATE
+════════════════════════════════════════ */
+let currentStep = 1;
+let selectedDate = null;
+let selectedTime = null;
+let calYear, calMonth;
+
+function openModal(type) {
+  currentStep = 1;
+  selectedDate = null;
+  selectedTime = null;
+  const now = new Date();
+  calYear  = now.getFullYear();
+  calMonth = now.getMonth();
+  renderCalendar();
+  showStep(1);
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  if (type === 'questions') {
+    document.getElementById('modal-title').textContent = 'Have a Question?';
+    document.getElementById('modal-subtitle').textContent = 'Book a quick chat — 30 min, no commitment.';
+  } else {
+    document.getElementById('modal-title').textContent = 'Book Your Discovery Call';
+    document.getElementById('modal-subtitle').textContent = '30 minutes · Monday–Friday · Pacific Time';
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ── Step Navigation ── */
+function showStep(n) {
+  document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.step-dot').forEach(d => d.classList.remove('active'));
+  const stepId = n === 'confirm' ? 'step-confirm' : 'step-' + n;
+  document.getElementById(stepId).classList.add('active');
+  if (typeof n === 'number' && n <= 3) {
+    for (let i = 1; i <= n; i++) {
+      const dot = document.getElementById('dot-' + i);
+      if (dot) dot.classList.add('active');
+    }
+  }
+  const back = document.getElementById('btn-back');
+  const next = document.getElementById('btn-next');
+  const footer = document.getElementById('modal-footer');
+  if (n === 'confirm') {
+    footer.style.display = 'none';
+    return;
+  }
+  footer.style.display = 'flex';
+  back.style.visibility = n > 1 ? 'visible' : 'hidden';
+  if (n === 3) {
+    next.textContent = 'Confirm Booking';
+    next.className = 'modal-next gold';
+  } else {
+    next.textContent = 'Next →';
+    next.className = 'modal-next';
+  }
+}
+
+function nextStep() {
+  if (currentStep === 1) {
+    if (!validateStep1()) return;
+    currentStep = 2;
+  } else if (currentStep === 2) {
+    if (!selectedDate || !selectedTime) {
+      alert('Please select a date and time to continue.');
+      return;
+    }
+    buildSummary();
+    currentStep = 3;
+  } else if (currentStep === 3) {
+    if (!document.getElementById('f-consent').checked) {
+      alert('Please confirm your consent to continue.');
+      return;
+    }
+    submitBooking();
+    return;
+  }
+  showStep(currentStep);
+}
+
+function prevStep() {
+  if (currentStep > 1) { currentStep--; showStep(currentStep); }
+}
+
+/* ── Validation ── */
+function validateStep1() {
+  let valid = true;
+  const checks = [
+    { id: 'fg-first', field: 'f-first', test: v => v.trim().length > 0 },
+    { id: 'fg-last',  field: 'f-last',  test: v => v.trim().length > 0 },
+    { id: 'fg-email', field: 'f-email', test: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) },
+  ];
+  checks.forEach(c => {
+    const val = document.getElementById(c.field).value;
+    const group = document.getElementById(c.id);
+    if (!c.test(val)) { group.classList.add('has-error'); valid = false; }
+    else { group.classList.remove('has-error'); }
+  });
+  return valid;
+}
+
+/* ── Booking Summary ── */
+function buildSummary() {
+  const first   = document.getElementById('f-first').value.trim();
+  const last    = document.getElementById('f-last').value.trim();
+  const email   = document.getElementById('f-email').value.trim();
+  const pkg     = document.getElementById('f-package');
+  const pkgText = pkg.options[pkg.selectedIndex].text;
+  const dateStr = selectedDate.toLocaleDateString('en-CA', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('booking-summary').innerHTML =
+    `<strong>Your Booking</strong>
+     <p><b>Name:</b> ${first} ${last}</p>
+     <p><b>Email:</b> ${email}</p>
+     <p><b>Date:</b> ${dateStr}</p>
+     <p><b>Time:</b> ${selectedTime} Pacific Time</p>
+     <p><b>Package interest:</b> ${pkgText}</p>`;
+}
+
+/* ── Submit (placeholder — Bryce connects to backend) ── */
+function submitBooking() {
+  const first   = document.getElementById('f-first').value.trim();
+  const last    = document.getElementById('f-last').value.trim();
+  const email   = document.getElementById('f-email').value.trim();
+  const phone   = document.getElementById('f-phone').value.trim();
+  const pkg     = document.getElementById('f-package');
+  const pkgText = pkg.options[pkg.selectedIndex].text;
+  const notes   = document.getElementById('f-notes').value.trim();
+  const dateStr = selectedDate.toLocaleDateString('en-CA', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  /*
+  ╔══════════════════════════════════════════════════════╗
+  ║  DEVELOPER NOTE — BRYCE                              ║
+  ║  Replace this block with your API call:              ║
+  ║                                                      ║
+  ║  POST /api/book  with body:                          ║
+  ║  { first, last, email, phone, package: pkgText,      ║
+  ║    date: selectedDate.toISOString(),                  ║
+  ║    time: selectedTime, notes }                        ║
+  ║                                                      ║
+  ║  On success:                                         ║
+  ║  1. Create Google Calendar event                     ║
+  ║  2. Send confirmation email to lead                  ║
+  ║  3. Send notification to peaklegacyvideos@gmail.com  ║
+  ║  4. Add lead to CRM, start email sequence            ║
+  ║  5. Fire Meta Pixel Lead event                       ║
+  ╚══════════════════════════════════════════════════════╝
+  */
+
+  document.getElementById('confirm-detail').innerHTML =
+    `<p><strong>Name</strong><br/>${first} ${last}</p>
+     <p style="margin-top:0.6rem;"><strong>Email</strong><br/>${email}</p>
+     <p style="margin-top:0.6rem;"><strong>Your Call</strong><br/>${dateStr} at ${selectedTime} PT</p>
+     <p style="margin-top:0.6rem;"><strong>Package Interest</strong><br/>${pkgText}</p>`;
+
+  showStep('confirm');
+}
+
+/* ════════════════════════════════════════
+   CALENDAR
+════════════════════════════════════════ */
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const TIME_SLOTS = ['9:00 AM','9:30 AM','10:00 AM','10:30 AM','11:00 AM','11:30 AM','12:00 PM','12:30 PM','1:00 PM','1:30 PM','2:00 PM','2:30 PM','3:00 PM','3:30 PM','4:00 PM','4:30 PM'];
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  document.getElementById('cal-month-label').textContent = MONTHS[calMonth] + ' ' + calYear;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'cal-day-header'; h.textContent = d;
+    grid.appendChild(h);
+  });
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-day empty'; grid.appendChild(empty);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cell = document.createElement('div');
+    cell.className = 'cal-day';
+    cell.textContent = d;
+    const date = new Date(calYear, calMonth, d);
+    const dow  = date.getDay();
+    const isPast = date < today;
+    const isWeekend = dow === 0 || dow === 6;
+    if (isPast || isWeekend) {
+      cell.classList.add('disabled');
+    } else {
+      if (date.toDateString() === today.toDateString()) cell.classList.add('today');
+      if (selectedDate && date.toDateString() === selectedDate.toDateString()) cell.classList.add('selected');
+      cell.addEventListener('click', () => selectDate(date, cell));
+    }
+    grid.appendChild(cell);
+  }
+}
+
+function selectDate(date, cell) {
+  selectedDate = date;
+  selectedTime = null;
+  document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('selected'));
+  cell.classList.add('selected');
+  renderTimeSlots(date);
+}
+
+function renderTimeSlots(date) {
+  const label = document.getElementById('time-label');
+  const container = document.getElementById('time-slots');
+  const section = document.getElementById('time-section');
+  const noMsg = document.getElementById('no-date-msg');
+  const dayName = date.toLocaleDateString('en-CA', { weekday:'long', month:'long', day:'numeric' });
+  label.textContent = 'Available times for ' + dayName;
+  container.innerHTML = '';
+  TIME_SLOTS.forEach(t => {
+    const slot = document.createElement('div');
+    slot.className = 'time-slot'; slot.textContent = t;
+    slot.addEventListener('click', () => {
+      selectedTime = t;
+      document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+      slot.classList.add('selected');
+    });
+    container.appendChild(slot);
+  });
+  section.style.display = 'block';
+  noMsg.style.display = 'none';
+
+  /*
+  ╔═══════════════════════════════════════════════════════════╗
+  ║  DEVELOPER NOTE — BRYCE                                   ║
+  ║  Replace the static TIME_SLOTS array above with a         ║
+  ║  live fetch from your backend:                            ║
+  ║                                                           ║
+  ║  GET /api/availability?date=YYYY-MM-DD                    ║
+  ║                                                           ║
+  ║  Backend checks Google Calendar for that day and          ║
+  ║  returns only slots that are not already booked.          ║
+  ║  Return format: ["9:00 AM", "10:30 AM", ...]              ║
+  ╚═══════════════════════════════════════════════════════════╝
+  */
+}
+</script>
+
+</body>
+</html>
