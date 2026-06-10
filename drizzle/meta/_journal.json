@@ -22,6 +22,13 @@
       "when": 1778266139470,
       "tag": "0002_brown_darwin",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781125990216,
+      "tag": "0003_stages_and_settings",
+      "breakpoints": true
     }
   ]
 }

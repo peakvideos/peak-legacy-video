@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -45,6 +46,59 @@ export const emailJobStatus = pgEnum("email_job_status", [
 ]);
 
 // ── Application tables ────────────────────────────────────────────
+
+/**
+ * Pipeline stages as data. System behavior never binds to a stage's name —
+ * only to the behavior flags below and to the `settings` pointers. `color`
+ * is a palette key resolved by the admin UI; `description` is the
+ * empty-column hint on the board (null for owner-created stages).
+ */
+export const stages = pgTable(
+  "stages",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+    color: text().notNull(),
+    description: text(),
+    position: integer().notNull(),
+    isWon: boolean().notNull().default(false),
+    isLost: boolean().notNull().default(false),
+    needsAction: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("stages_position_idx").on(t.position)],
+);
+
+/**
+ * Single-row settings store (enforced by the id = 1 check). Holds the
+ * stage pointers and knobs that system behavior binds to instead of stage
+ * names: where inquiries land, where booking promotes to, when a lead
+ * counts as cold, and the global send pause.
+ */
+export const settings = pgTable(
+  "settings",
+  {
+    id: integer().primaryKey().default(1),
+    entryStageId: uuid()
+      .notNull()
+      .references(() => stages.id, { onDelete: "restrict" }),
+    bookingStageId: uuid()
+      .notNull()
+      .references(() => stages.id, { onDelete: "restrict" }),
+    coldThresholdDays: integer().notNull().default(14),
+    paused: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [check("settings_single_row", sql`${t.id} = 1`)],
+);
 
 export const leads = pgTable(
   "leads",
