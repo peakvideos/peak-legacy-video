@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { emailJobs, leads, stageAutomations } from "@/lib/db/schema";
+import { emailJobs, leads, stageAutomations, stages } from "@/lib/db/schema";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -10,7 +10,8 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
  * anchored to `from`. Skips any template that has already been delivered
  * (status = `sent`) so re-entering a stage doesn't duplicate emails.
  * Cancelled prior jobs don't count — those represent attempts we never
- * delivered.
+ * delivered. A stage flagged Won or Lost enqueues nothing: leads there
+ * are finished, whatever automations remain attached.
  */
 export async function enqueueAutomationsForStage(
   leadId: string,
@@ -19,6 +20,15 @@ export async function enqueueAutomationsForStage(
 ): Promise<{ enqueued: number; skipped: number }> {
   const runner = options.tx ?? db;
   const from = options.from ?? new Date();
+
+  const [stage] = await runner
+    .select({ isWon: stages.isWon, isLost: stages.isLost })
+    .from(stages)
+    .where(eq(stages.id, stageId))
+    .limit(1);
+  if (stage?.isWon || stage?.isLost) {
+    return { enqueued: 0, skipped: 0 };
+  }
 
   const automations = await runner
     .select({
