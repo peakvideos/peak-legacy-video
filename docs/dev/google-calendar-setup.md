@@ -6,7 +6,7 @@ This document walks the **owner** through setting up the Google Calendar OAuth c
 2. `GOOGLE_CALENDAR_CLIENT_SECRET`
 3. `GOOGLE_CALENDAR_REFRESH_TOKEN`
 
-You'll do this **once**. After that the booking system stays connected forever — no re-auth needed.
+You'll do this **once**. After that the booking system stays connected indefinitely — no re-auth needed — **provided you publish the app in Step 6**. Skipping that step makes the connection die after 7 days.
 
 **Sign in to all of the following with `peaklegacyvideos@gmail.com`**, since that's the calendar we're connecting to.
 
@@ -36,7 +36,7 @@ You'll do this **once**. After that the booking system stays connected forever �
    - **Contact information**: peaklegacyvideos@gmail.com
    - Agree to the user data policy.
 4. Click **Create**.
-5. After saving, find the **Audience** tab in the sidebar and under **Test users**, click **+ Add users** and add `peaklegacyvideos@gmail.com`. (Required while the app is in "Testing" mode — which is fine for our use, since only you ever sign in.)
+5. After saving, find the **Audience** tab in the sidebar and under **Test users**, click **+ Add users** and add `peaklegacyvideos@gmail.com`. (Required while the app is in "Testing" mode during setup. You'll switch it to "In production" in Step 6 — don't skip that step.)
 
 ## Step 4 — Create OAuth 2.0 Client credentials
 
@@ -67,7 +67,16 @@ You'll do this **once**. After that the booking system stays connected forever �
 9. Click **Exchange authorization code for tokens**.
 10. Copy the **Refresh token** that appears (it's the value next to `"refresh_token":` — a long string starting with `1//`).
 
-## Step 6 — Send three values to your developer
+## Step 6 — Publish the app to "In production"
+
+This step is what makes the refresh token permanent. **Skip it and the connection dies after 7 days** — Google expires every refresh token issued by an app left in "Testing" mode (the calendar scope doesn't qualify for the name/email/profile exemption).
+
+1. Sidebar → **APIs & Services → OAuth consent screen** → **Audience** tab.
+2. Under **Publishing status**, click **Publish app** and confirm.
+3. You do **not** need to complete Google's verification process — ignore any prompts about it. The only consequence of staying unverified is the "Google hasn't verified this app" warning you already clicked through, and only you ever see it.
+4. If you minted the refresh token in Step 5 **before** publishing, redo Step 5 now — tokens issued while the app was in Testing keep their 7-day expiry.
+
+## Step 7 — Send three values to your developer
 
 Send these three values to Bryce **securely** (1Password, signed Slack DM, encrypted email — not plain email):
 
@@ -75,7 +84,7 @@ Send these three values to Bryce **securely** (1Password, signed Slack DM, encry
 |----------------------------------|------------------|
 | `GOOGLE_CALENDAR_CLIENT_ID`      | Step 4           |
 | `GOOGLE_CALENDAR_CLIENT_SECRET`  | Step 4           |
-| `GOOGLE_CALENDAR_REFRESH_TOKEN`  | Step 5           |
+| `GOOGLE_CALENDAR_REFRESH_TOKEN`  | Step 5 (re-minted after Step 6 if needed) |
 
 Once Bryce drops them into the booking system, your live calendar becomes the source of truth for available times — anything you block out (existing meetings, personal events, vacation) automatically disappears from the booking page.
 
@@ -113,10 +122,13 @@ When the owner sends the values, the developer:
 ## FAQ
 
 **Do I have to "publish" the app in Google Cloud?**
-No. Leaving it in "Testing" mode is fine because only you (`peaklegacyvideos@gmail.com`) ever sign in. Test-mode refresh tokens last as long as you don't revoke access on your Google account.
+**Yes — this is required** (Step 6). Refresh tokens issued by an app in "Testing" mode expire after 7 days, and the booking system silently loses calendar access when that happens. Publishing to "In production" makes the token long-lived. You do *not* need Google's verification review — the unverified-app warning is fine for a single-user integration.
+
+**Can the token still die after publishing?**
+Only in three cases: you remove the app's access under myaccount.google.com → Security → Third-party apps; the token goes unused for six months (won't happen — every availability check uses it); or the Playground mint flow is re-run 100+ times against the same client (Google silently invalidates the oldest tokens). Changing your Google password does **not** revoke calendar tokens — that rule only applies to Gmail scopes. The failure mode when it dies: the booking calendar shows an error to leads (availability returns 500), and new bookings stop appearing on your Google Calendar even though they still save in the CRM.
 
 **What if I rotate or revoke the token?**
-Just redo Steps 4–6 and send the new three values. The system can be updated without any redeploy by swapping environment variables.
+Just redo Step 5 (the app stays published; the Step 4 client is still valid) and send the new refresh token. The system can be updated without any redeploy by swapping environment variables.
 
 **Can someone read my calendar with these tokens?**
 Anyone with all three values could read/write your `peaklegacyvideos@gmail.com` calendar. Treat them like a password.

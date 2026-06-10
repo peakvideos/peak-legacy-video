@@ -68,6 +68,7 @@ OWNER_NOTIFICATION_EMAIL=peaklegacyvideos@gmail.com
 - **2-Step Verification disabled** → can't generate App Passwords at all. The Apps Passwords page returns a 403-ish UI. Turn 2SV on first.
 - **Rate limit** (≥500 sends in 24h on personal Gmail) → SMTP refuses connections, nodemailer throws. The cron's existing retry-with-backoff handles short bursts; sustained overage means we need to migrate to a domain on an ESP. Workspace ($7/user/mo) raises the cap to 2,000/day if it ever becomes a problem.
 - **Account suspended for unusual activity** → Google emails the owner; they click "this was me" to reinstate. Unlikely at our volume.
+- **App Password silently revoked** → App Passwords don't expire on a schedule, but Google deletes them when the account password changes or 2-Step Verification is turned off. If the owner ever changes his Google password, regenerate the App Password and update `GMAIL_SMTP_PASSWORD` the same day — queued emails retry with backoff, so nothing is lost if it's fixed within a few hours.
 
 ## Notes
 
