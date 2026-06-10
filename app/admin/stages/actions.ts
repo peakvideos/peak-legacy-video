@@ -1,10 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq, gte, sql } from "drizzle-orm";
+import { eq, gt, gte, sql } from "drizzle-orm";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { stages } from "@/lib/db/schema";
+import { leads, stages } from "@/lib/db/schema";
+import {
+  cancelPendingForLead,
+  transitionLeadStageAutomations,
+} from "@/lib/email/sequence";
+import { getSettings, updateSettings } from "@/lib/stages/settings";
 
 /**
  * Adds a stage to the pipeline at the given board position, shifting the
@@ -100,4 +105,111 @@ export async function reorderStages(orderedIds: string[]) {
 export async function recolorStage(stageId: string, color: string) {
   await requireSession();
   await updateStageOrThrow(stageId, { color });
+}
+
+/**
+ * Deletes a stage from the pipeline, closing the position gap it leaves.
+ * A stage holding leads needs a destination stage; every resident lead is
+ * relocated there before the stage goes. Relocation cancels the leads'
+ * unsent jobs but enqueues the destination's automations only behind the
+ * explicit opt-in — a bulk administrative move is not an ordinary lead
+ * move. If the Entry or Booking Stage pointer names this stage, the
+ * matching re-point argument is required and applied in the same
+ * transaction, so a delete can never leave a setting dangling.
+ */
+export async function deleteStage(args: {
+  stageId: string;
+  destinationStageId?: string;
+  enqueueDestinationAutomations?: boolean;
+  entryStageId?: string;
+  bookingStageId?: string;
+}) {
+  await requireSession();
+
+  await db.transaction(async (tx) => {
+    const [stage] = await tx
+      .select({ id: stages.id, position: stages.position })
+      .from(stages)
+      .where(eq(stages.id, args.stageId))
+      .limit(1);
+    if (!stage) {
+      throw new Error("Unknown stage");
+    }
+
+    const [{ count }] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(stages);
+    if (count <= 1) {
+      throw new Error("The pipeline must keep at least one stage.");
+    }
+
+    const current = await getSettings({ tx });
+    const repoint: Parameters<typeof updateSettings>[0] = {};
+    if (current.entryStageId === stage.id) {
+      if (!args.entryStageId || args.entryStageId === stage.id) {
+        throw new Error(
+          "The Entry Stage points here — re-point it to another stage first.",
+        );
+      }
+      repoint.entryStageId = args.entryStageId;
+    }
+    if (current.bookingStageId === stage.id) {
+      if (!args.bookingStageId || args.bookingStageId === stage.id) {
+        throw new Error(
+          "The Booking Stage points here — re-point it to another stage first.",
+        );
+      }
+      repoint.bookingStageId = args.bookingStageId;
+    }
+    if (Object.keys(repoint).length > 0) {
+      await updateSettings(repoint, { tx });
+    }
+
+    const residents = await tx
+      .select({ id: leads.id })
+      .from(leads)
+      .where(eq(leads.stageId, stage.id));
+    if (residents.length > 0) {
+      const destinationId = args.destinationStageId;
+      if (!destinationId || destinationId === stage.id) {
+        throw new Error(
+          "This stage holds leads — choose a destination stage for them.",
+        );
+      }
+      const [destination] = await tx
+        .select({ id: stages.id })
+        .from(stages)
+        .where(eq(stages.id, destinationId))
+        .limit(1);
+      if (!destination) {
+        throw new Error("Unknown destination stage");
+      }
+
+      await tx
+        .update(leads)
+        .set({ stageId: destination.id, updatedAt: new Date() })
+        .where(eq(leads.stageId, stage.id));
+
+      // Leaving a stage cancels unsent jobs either way; only the opt-in
+      // treats the relocation as a stage entry that enqueues the
+      // destination's automations.
+      for (const resident of residents) {
+        if (args.enqueueDestinationAutomations) {
+          await transitionLeadStageAutomations(resident.id, destination.id, {
+            tx,
+          });
+        } else {
+          await cancelPendingForLead(resident.id, { tx });
+        }
+      }
+    }
+
+    await tx.delete(stages).where(eq(stages.id, stage.id));
+    await tx
+      .update(stages)
+      .set({ position: sql`${stages.position} - 1` })
+      .where(gt(stages.position, stage.position));
+  });
+
+  revalidatePath("/admin");
 }

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   createStage,
+  deleteStage,
   recolorStage,
   renameStage,
   reorderStages,
@@ -19,6 +20,7 @@ import {
   STAGE_COLORS,
   stagePalette,
   type StageRow,
+  type StageSettings,
 } from "@/lib/admin/stages";
 import { cn } from "@/lib/utils";
 import { useAdminTheme } from "./admin-theme";
@@ -54,6 +56,33 @@ function PositionSelect({
       {slots.map((s, i) => (
         <option key={s.id} value={i + 1}>
           After {s.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function StageSelect({
+  stages,
+  value,
+  onChange,
+  disabled,
+}: {
+  stages: StageRow[];
+  value: string;
+  onChange: (v: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <select
+      value={value}
+      disabled={disabled}
+      onChange={(e) => onChange(e.target.value)}
+      className={INPUT}
+    >
+      {stages.map((s) => (
+        <option key={s.id} value={s.id}>
+          {s.name}
         </option>
       ))}
     </select>
@@ -218,29 +247,54 @@ export function AddStageButton({ stages }: { stages: StageRow[] }) {
   );
 }
 
-/** Column-header dialog: rename, recolor, and reposition one stage. */
+/**
+ * Column-header dialog: rename, recolor, and reposition one stage — plus
+ * the guided delete flow, which walks the owner through relocating
+ * resident leads and re-pointing any setting aimed at this stage before
+ * the delete can complete.
+ */
 export function EditStageButton({
   stage,
   stages,
+  settings,
+  leadCount,
 }: {
   stage: StageRow;
   stages: StageRow[];
+  settings: StageSettings;
+  leadCount: number;
 }) {
   const ordered = [...stages].sort((a, b) => a.position - b.position);
   const slots = ordered.filter((s) => s.id !== stage.id);
   const currentIndex = ordered.findIndex((s) => s.id === stage.id);
 
+  const pointsEntry = settings.entryStageId === stage.id;
+  const pointsBooking = settings.bookingStageId === stage.id;
+  const isLastStage = slots.length === 0;
+
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"edit" | "delete">("edit");
   const [name, setName] = useState(stage.name);
   const [color, setColor] = useState(stage.color);
   const [position, setPosition] = useState(currentIndex);
+  const [destinationId, setDestinationId] = useState(slots[0]?.id ?? "");
+  const [enqueueAutomations, setEnqueueAutomations] = useState(false);
+  const [entryRepointId, setEntryRepointId] = useState(slots[0]?.id ?? "");
+  const [bookingRepointId, setBookingRepointId] = useState(
+    slots[0]?.id ?? "",
+  );
   const [pending, startTransition] = useTransition();
 
   const openWithCurrent = (next: boolean) => {
     if (next) {
+      setMode("edit");
       setName(stage.name);
       setColor(stage.color);
       setPosition(currentIndex);
+      setDestinationId(slots[0]?.id ?? "");
+      setEnqueueAutomations(false);
+      setEntryRepointId(slots[0]?.id ?? "");
+      setBookingRepointId(slots[0]?.id ?? "");
     }
     setOpen(next);
   };
@@ -267,21 +321,27 @@ export function EditStageButton({
     });
   };
 
-  return (
-    <StageDialog
-      open={open}
-      onOpenChange={openWithCurrent}
-      title={`Edit ${stage.name}`}
-      trigger={
-        <button
-          type="button"
-          title={`Edit ${stage.name}`}
-          className="text-(--adm-text-muted) hover:text-gold text-base leading-none"
-        >
-          ✎
-        </button>
+  const confirmDelete = () => {
+    startTransition(async () => {
+      try {
+        await deleteStage({
+          stageId: stage.id,
+          destinationStageId: leadCount > 0 ? destinationId : undefined,
+          enqueueDestinationAutomations:
+            leadCount > 0 ? enqueueAutomations : undefined,
+          entryStageId: pointsEntry ? entryRepointId : undefined,
+          bookingStageId: pointsBooking ? bookingRepointId : undefined,
+        });
+        toast.success(`Deleted "${stage.name}"`);
+        setOpen(false);
+      } catch {
+        toast.error("Couldn't delete the stage.");
       }
-    >
+    });
+  };
+
+  const editBody = (
+    <>
       <div className="px-6 py-5 space-y-4">
         <div className="space-y-2">
           <label className={LABEL}>Name</label>
@@ -307,12 +367,22 @@ export function EditStageButton({
           />
         </div>
       </div>
-      <footer className="px-6 py-3 border-t border-(--adm-border) bg-(--adm-surface-2) flex items-center justify-end gap-2">
+      <footer className="px-6 py-3 border-t border-(--adm-border) bg-(--adm-surface-2) flex items-center gap-2">
+        {!isLastStage && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => setMode("delete")}
+            className="font-heading text-xs uppercase tracking-[0.14em] px-3 py-2 text-red-700 hover:text-red-600 mr-auto"
+          >
+            Delete…
+          </button>
+        )}
         <button
           type="button"
           disabled={pending}
           onClick={() => setOpen(false)}
-          className="font-heading text-xs uppercase tracking-[0.14em] px-3 py-2 text-(--adm-text-muted) hover:text-(--adm-text)"
+          className="font-heading text-xs uppercase tracking-[0.14em] px-3 py-2 text-(--adm-text-muted) hover:text-(--adm-text) ml-auto"
         >
           Cancel
         </button>
@@ -325,6 +395,105 @@ export function EditStageButton({
           Save
         </button>
       </footer>
+    </>
+  );
+
+  const destination = slots.find((s) => s.id === destinationId);
+  const deleteBody = (
+    <>
+      <div className="px-6 py-5 space-y-4">
+        <p className="text-sm text-(--adm-text)">
+          Deleting <strong>{stage.name}</strong> removes its automated
+          emails. Their templates stay in your library, unattached.
+        </p>
+        {leadCount > 0 && (
+          <>
+            <div className="space-y-2">
+              <label className={LABEL}>
+                Move its {leadCount} lead{leadCount === 1 ? "" : "s"} to
+              </label>
+              <StageSelect
+                stages={slots}
+                value={destinationId}
+                onChange={setDestinationId}
+                disabled={pending}
+              />
+            </div>
+            <label className="flex items-start gap-2 text-sm text-(--adm-text)">
+              <input
+                type="checkbox"
+                checked={enqueueAutomations}
+                disabled={pending}
+                onChange={(e) => setEnqueueAutomations(e.target.checked)}
+                className="mt-0.5 accent-forest"
+              />
+              <span>
+                Also queue {destination?.name ?? "the destination"}&rsquo;s
+                automated emails for the moved leads
+              </span>
+            </label>
+          </>
+        )}
+        {pointsEntry && (
+          <div className="space-y-2">
+            <label className={LABEL}>New inquiries land in this stage — re-point them to</label>
+            <StageSelect
+              stages={slots}
+              value={entryRepointId}
+              onChange={setEntryRepointId}
+              disabled={pending}
+            />
+          </div>
+        )}
+        {pointsBooking && (
+          <div className="space-y-2">
+            <label className={LABEL}>Booked calls promote to this stage — re-point them to</label>
+            <StageSelect
+              stages={slots}
+              value={bookingRepointId}
+              onChange={setBookingRepointId}
+              disabled={pending}
+            />
+          </div>
+        )}
+      </div>
+      <footer className="px-6 py-3 border-t border-(--adm-border) bg-(--adm-surface-2) flex items-center justify-end gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => setMode("edit")}
+          className="font-heading text-xs uppercase tracking-[0.14em] px-3 py-2 text-(--adm-text-muted) hover:text-(--adm-text)"
+        >
+          Back
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={confirmDelete}
+          className="font-heading text-xs uppercase tracking-[0.14em] px-4 py-2 bg-red-700 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Delete stage
+        </button>
+      </footer>
+    </>
+  );
+
+  return (
+    <StageDialog
+      open={open}
+      onOpenChange={openWithCurrent}
+      title={mode === "delete" ? `Delete ${stage.name}` : `Edit ${stage.name}`}
+      trigger={
+        <button
+          type="button"
+          title={`Edit ${stage.name}`}
+          className="text-(--adm-text-muted) hover:text-gold text-base leading-none"
+        >
+          ✎
+        </button>
+      }
+    >
+      {mode === "delete" ? deleteBody : editBody}
     </StageDialog>
   );
 }
