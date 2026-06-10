@@ -23,3 +23,25 @@ export async function getSettings(options: { tx?: Tx } = {}): Promise<Settings> 
   }
   return row;
 }
+
+/** Partially updates the settings row; omitted fields are untouched. */
+export async function updateSettings(
+  patch: Partial<
+    Pick<
+      Settings,
+      "entryStageId" | "bookingStageId" | "coldThresholdDays" | "paused"
+    >
+  >,
+  options: { tx?: Tx } = {},
+): Promise<Settings> {
+  const runner = options.tx ?? db;
+  const [row] = await runner
+    .update(settings)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(settings.id, 1))
+    .returning();
+  if (!row) {
+    throw new Error("Settings row missing — run the database migrations.");
+  }
+  return row;
+}

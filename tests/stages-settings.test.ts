@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { listStages } from "@/lib/stages";
-import { getSettings } from "@/lib/stages/settings";
+import { getSettings, updateSettings } from "@/lib/stages/settings";
 
 test("the seeded pipeline reproduces today's eight stages, in order, with their behavior flags", async () => {
   const stages = await listStages();
@@ -38,4 +38,26 @@ test("settings point at the seeded entry and booking stages, with a 14-day cold 
   expect(settings.bookingStageId).toBe(byName.get("Booked a call")!.id);
   expect(settings.coldThresholdDays).toBe(14);
   expect(settings.paused).toBe(false);
+});
+
+test("updating one setting persists it and leaves the others untouched", async () => {
+  const before = await getSettings();
+
+  await updateSettings({ coldThresholdDays: 30 });
+
+  let after = await getSettings();
+  expect(after.coldThresholdDays).toBe(30);
+  expect(after.paused).toBe(before.paused);
+  expect(after.entryStageId).toBe(before.entryStageId);
+  expect(after.bookingStageId).toBe(before.bookingStageId);
+
+  // Re-pointing a stage pointer works the same way.
+  const stages = await listStages();
+  const other = stages.find((s) => s.id !== before.entryStageId)!;
+  await updateSettings({ entryStageId: other.id, paused: true });
+
+  after = await getSettings();
+  expect(after.entryStageId).toBe(other.id);
+  expect(after.paused).toBe(true);
+  expect(after.coldThresholdDays).toBe(30);
 });
