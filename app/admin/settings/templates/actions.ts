@@ -1,19 +1,12 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { emailTemplates, stageAutomations } from "@/lib/db/schema";
 import { sendStoredTemplateEmail } from "@/lib/email";
-
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) throw new Error("Unauthorized");
-  return session;
-}
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 

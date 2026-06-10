@@ -1,4 +1,5 @@
 import "server-only";
+import { headers } from "next/headers";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
@@ -66,3 +67,15 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
+
+/**
+ * The session guard every owner-only server action starts with: resolves
+ * the current session from the request or throws.
+ */
+export async function requireSession(): Promise<Session> {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}

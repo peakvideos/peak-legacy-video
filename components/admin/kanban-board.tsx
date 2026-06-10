@@ -15,6 +15,7 @@ import {
 } from "@dnd-kit/core";
 import { setLeadStage } from "@/app/admin/actions";
 import { KanbanCard, type KanbanLeadRow } from "./kanban-card";
+import { AddStageButton, EditStageButton } from "./stage-editor";
 import {
   splitBoardViews,
   stagePalette,
@@ -155,12 +156,14 @@ export function KanbanBoard({
           <KanbanColumn
             key={stage.id}
             stage={stage}
+            allStages={ordered}
             leads={grouped.get(stage.id) ?? []}
             settings={settings}
             bookingStagePosition={bookingStagePosition}
             interactive={mounted}
           />
         ))}
+        <AddStageButton stages={ordered} />
       </div>
     </div>
   );
@@ -257,12 +260,14 @@ function SearchInput({
 
 function KanbanColumn({
   stage,
+  allStages,
   leads,
   settings,
   bookingStagePosition,
   interactive,
 }: {
   stage: StageRow;
+  allStages: StageRow[];
   leads: KanbanLeadRow[];
   settings: StageSettings;
   bookingStagePosition: number;
@@ -271,6 +276,7 @@ function KanbanColumn({
   return interactive ? (
     <DroppableColumn
       stage={stage}
+      allStages={allStages}
       leads={leads}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
@@ -278,6 +284,7 @@ function KanbanColumn({
   ) : (
     <ColumnShell
       stage={stage}
+      allStages={allStages}
       leads={leads}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
@@ -288,11 +295,13 @@ function KanbanColumn({
 
 function DroppableColumn({
   stage,
+  allStages,
   leads,
   settings,
   bookingStagePosition,
 }: {
   stage: StageRow;
+  allStages: StageRow[];
   leads: KanbanLeadRow[];
   settings: StageSettings;
   bookingStagePosition: number;
@@ -302,6 +311,7 @@ function DroppableColumn({
     <ColumnShell
       ref={setNodeRef}
       stage={stage}
+      allStages={allStages}
       leads={leads}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
@@ -313,6 +323,7 @@ function DroppableColumn({
 
 function ColumnShell({
   stage,
+  allStages,
   leads,
   settings,
   bookingStagePosition,
@@ -321,6 +332,7 @@ function ColumnShell({
   ref,
 }: {
   stage: StageRow;
+  allStages: StageRow[];
   leads: KanbanLeadRow[];
   settings: StageSettings;
   bookingStagePosition: number;
@@ -345,6 +357,7 @@ function ColumnShell({
           <span className="font-heading text-xs text-(--adm-text-muted)">
             {leads.length}
           </span>
+          <EditStageButton stage={stage} stages={allStages} />
           <Link
             href={`/admin/stages/${stage.id}`}
             className="text-(--adm-text-muted) hover:text-gold text-base leading-none"
