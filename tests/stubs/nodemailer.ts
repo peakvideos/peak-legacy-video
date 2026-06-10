@@ -44,4 +44,5 @@ export function createTransport() {
   };
 }
 
-export default { createTransport };
+const nodemailer = { createTransport };
+export default nodemailer;

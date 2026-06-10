@@ -17,6 +17,7 @@ Inbound sales system: landing page + booking modal + owner CRM + email sequences
 - **Analytics:** Meta Pixel (PageView on load, Lead on booking)
 - **Hosting:** Vercel (web) + Railway (Postgres + email-cron function)
 - **Package manager:** pnpm
+- **Tests:** `pnpm test` — Vitest integration tests against a throwaway local Postgres database; only the SMTP transport is mocked. See `tests/README.md` before adding tests.
 
 ## Brand tokens
 
