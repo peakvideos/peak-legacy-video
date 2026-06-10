@@ -5,12 +5,8 @@ import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { stageAutomations } from "@/lib/db/schema";
-import {
-  reconcileAutomationsForStage,
-  type LeadStage,
-} from "@/lib/email/sequence";
-import { STAGE_ORDER } from "@/lib/admin/stages";
+import { stageAutomations, stages } from "@/lib/db/schema";
+import { reconcileAutomationsForStage } from "@/lib/email/sequence";
 
 async function requireSession() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -18,11 +14,17 @@ async function requireSession() {
   return session;
 }
 
-function asLeadStage(stage: string): LeadStage {
-  if (!(STAGE_ORDER as string[]).includes(stage)) {
-    throw new Error(`Unknown stage: ${stage}`);
+/** Resolves the stage id or throws — actions never write to a ghost stage. */
+async function ensureStage(stageId: string): Promise<string> {
+  const [row] = await db
+    .select({ id: stages.id })
+    .from(stages)
+    .where(eq(stages.id, stageId))
+    .limit(1);
+  if (!row) {
+    throw new Error(`Unknown stage: ${stageId}`);
   }
-  return stage as LeadStage;
+  return row.id;
 }
 
 export async function addAutomation(args: {
@@ -31,7 +33,7 @@ export async function addAutomation(args: {
   delayMinutes: number;
 }) {
   await requireSession();
-  const stage = asLeadStage(args.stage);
+  const stageId = await ensureStage(args.stage);
 
   if (args.delayMinutes < 0 || !Number.isFinite(args.delayMinutes)) {
     throw new Error("Delay must be a non-negative number.");
@@ -40,18 +42,18 @@ export async function addAutomation(args: {
   const existing = await db
     .select({ position: stageAutomations.position })
     .from(stageAutomations)
-    .where(eq(stageAutomations.stage, stage));
+    .where(eq(stageAutomations.stageId, stageId));
   const nextPosition =
     existing.reduce((max, row) => Math.max(max, row.position), -1) + 1;
 
   await db.insert(stageAutomations).values({
-    stage,
+    stageId,
     templateId: args.templateId,
     delayMinutes: Math.round(args.delayMinutes),
     position: nextPosition,
   });
 
-  revalidatePath(`/admin/stages/${stage}`);
+  revalidatePath(`/admin/stages/${stageId}`);
   revalidatePath("/admin");
 }
 
@@ -61,7 +63,7 @@ export async function updateAutomation(args: {
   delayMinutes: number;
 }) {
   await requireSession();
-  const stage = asLeadStage(args.stage);
+  const stageId = await ensureStage(args.stage);
 
   if (args.delayMinutes < 0 || !Number.isFinite(args.delayMinutes)) {
     throw new Error("Delay must be a non-negative number.");
@@ -75,13 +77,13 @@ export async function updateAutomation(args: {
     })
     .where(eq(stageAutomations.id, args.id));
 
-  revalidatePath(`/admin/stages/${stage}`);
+  revalidatePath(`/admin/stages/${stageId}`);
   revalidatePath("/admin");
 }
 
 export async function removeAutomation(args: { id: string; stage: string }) {
   await requireSession();
-  const stage = asLeadStage(args.stage);
+  const stageId = await ensureStage(args.stage);
 
   await db.transaction(async (tx) => {
     await tx
@@ -89,14 +91,14 @@ export async function removeAutomation(args: { id: string; stage: string }) {
       .where(
         and(
           eq(stageAutomations.id, args.id),
-          eq(stageAutomations.stage, stage),
+          eq(stageAutomations.stageId, stageId),
         ),
       );
 
-    await reconcileAutomationsForStage(stage, { tx });
+    await reconcileAutomationsForStage(stageId, { tx });
   });
 
-  revalidatePath(`/admin/stages/${stage}`);
+  revalidatePath(`/admin/stages/${stageId}`);
   revalidatePath("/admin");
 }
 
@@ -105,7 +107,7 @@ export async function reorderAutomations(args: {
   orderedIds: string[];
 }) {
   await requireSession();
-  const stage = asLeadStage(args.stage);
+  const stageId = await ensureStage(args.stage);
 
   await db.transaction(async (tx) => {
     for (let i = 0; i < args.orderedIds.length; i++) {
@@ -116,5 +118,5 @@ export async function reorderAutomations(args: {
     }
   });
 
-  revalidatePath(`/admin/stages/${stage}`);
+  revalidatePath(`/admin/stages/${stageId}`);
 }

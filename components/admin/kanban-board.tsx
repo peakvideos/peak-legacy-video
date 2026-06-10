@@ -14,14 +14,12 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { setLeadStage } from "@/app/admin/actions";
-import type { LeadStage } from "@/lib/admin/stages";
 import { KanbanCard, type KanbanLeadRow } from "./kanban-card";
 import {
-  ACTIVE_STAGES,
-  SETTLED_STAGES,
-  STAGE_LABELS,
-  STAGE_ORDER,
-  STAGE_TONE,
+  splitBoardViews,
+  stagePalette,
+  type StageRow,
+  type StageSettings,
 } from "@/lib/admin/stages";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +42,15 @@ function leadMatchesQuery(lead: KanbanLeadRow, query: string): boolean {
 
 const NO_DROP_ANIMATION = null;
 
-export function KanbanBoard({ leads }: { leads: KanbanLeadRow[] }) {
+export function KanbanBoard({
+  leads,
+  stages,
+  settings,
+}: {
+  leads: KanbanLeadRow[];
+  stages: StageRow[];
+  settings: StageSettings;
+}) {
   // dnd-kit allocates internal IDs (DndDescribedBy-N) using a module-level
   // counter that diverges between SSR and client renders. Gating the
   // interactive tree behind a mount flag lets the server emit the static
@@ -55,9 +61,9 @@ export function KanbanBoard({ leads }: { leads: KanbanLeadRow[] }) {
 
   const [optimistic, applyOptimistic] = useOptimistic(
     leads,
-    (state, update: { id: string; stage: LeadStage }) =>
+    (state, update: { id: string; stageId: string }) =>
       state.map((l) =>
-        l.id === update.id ? { ...l, stage: update.stage } : l,
+        l.id === update.id ? { ...l, stageId: update.stageId } : l,
       ),
   );
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -72,38 +78,36 @@ export function KanbanBoard({ leads }: { leads: KanbanLeadRow[] }) {
     }),
   );
 
-  const grouped: Record<LeadStage, KanbanLeadRow[]> = {
-    new: [],
-    stale: [],
-    booked_a_call: [],
-    call_completed: [],
-    video_shoot_scheduled: [],
-    post_video_shoot: [],
-    closed: [],
-    lost: [],
-  };
+  const ordered = [...stages].sort((a, b) => a.position - b.position);
+  const stageById = new Map(ordered.map((s) => [s.id, s]));
+  const bookingStagePosition =
+    stageById.get(settings.bookingStageId)?.position ?? -1;
+
+  const grouped = new Map<string, KanbanLeadRow[]>(
+    ordered.map((s) => [s.id, []]),
+  );
   for (const lead of optimistic) {
     if (!leadMatchesQuery(lead, query)) continue;
-    const bucket = grouped[lead.stage];
+    const bucket = grouped.get(lead.stageId);
     if (bucket) {
       bucket.push(lead);
     } else {
-      // Unknown stage value (e.g. legacy data not yet migrated) — surface
-      // it so it isn't silently lost, then bucket into `new` as a safe
-      // default.
+      // Unknown stage id (e.g. data outracing a stale board) — surface it so
+      // it isn't silently lost, then bucket into the Entry Stage column.
       console.warn(
-        `[kanban] Lead ${lead.id} has unknown stage '${lead.stage}', falling back to new.`,
+        `[kanban] Lead ${lead.id} has unknown stage '${lead.stageId}', falling back to the Entry Stage.`,
       );
-      grouped.new.push(lead);
+      grouped.get(settings.entryStageId)?.push(lead);
     }
   }
 
-  const stagesShown: LeadStage[] =
+  const views = splitBoardViews(ordered);
+  const stagesShown =
     view === "active"
-      ? ACTIVE_STAGES
+      ? views.active
       : view === "settled"
-        ? SETTLED_STAGES
-        : STAGE_ORDER;
+        ? views.settled
+        : ordered;
 
   const totalMatches = optimistic.filter((l) => leadMatchesQuery(l, query)).length;
 
@@ -121,15 +125,15 @@ export function KanbanBoard({ leads }: { leads: KanbanLeadRow[] }) {
     setDraggingId(null);
     if (!overId) return;
 
-    const targetStage = String(overId) as LeadStage;
-    if (!STAGE_ORDER.includes(targetStage)) return;
+    const targetStageId = String(overId);
+    if (!stageById.has(targetStageId)) return;
 
     const lead = optimistic.find((l) => l.id === leadId);
-    if (!lead || lead.stage === targetStage) return;
+    if (!lead || lead.stageId === targetStageId) return;
 
     startTransition(async () => {
-      applyOptimistic({ id: leadId, stage: targetStage });
-      await setLeadStage(leadId, targetStage);
+      applyOptimistic({ id: leadId, stageId: targetStageId });
+      await setLeadStage(leadId, targetStageId);
     });
   };
 
@@ -149,10 +153,11 @@ export function KanbanBoard({ leads }: { leads: KanbanLeadRow[] }) {
       <div className="grid grid-flow-col auto-cols-[minmax(240px,1fr)] gap-3 min-w-max">
         {stagesShown.map((stage) => (
           <KanbanColumn
-            key={stage}
+            key={stage.id}
             stage={stage}
-            leads={grouped[stage]}
-            tone={STAGE_TONE[stage]}
+            leads={grouped.get(stage.id) ?? []}
+            settings={settings}
+            bookingStagePosition={bookingStagePosition}
             interactive={mounted}
           />
         ))}
@@ -175,7 +180,15 @@ export function KanbanBoard({ leads }: { leads: KanbanLeadRow[] }) {
       <DndContext sensors={sensors} onDragStart={handleStart} onDragEnd={handleEnd}>
         {board}
         <DragOverlay dropAnimation={NO_DROP_ANIMATION}>
-          {draggingLead ? <KanbanCard lead={draggingLead} isOverlay /> : null}
+          {draggingLead ? (
+            <KanbanCard
+              lead={draggingLead}
+              stage={stageById.get(draggingLead.stageId)}
+              settings={settings}
+              bookingStagePosition={bookingStagePosition}
+              isOverlay
+            />
+          ) : null}
         </DragOverlay>
       </DndContext>
     </>
@@ -245,37 +258,53 @@ function SearchInput({
 function KanbanColumn({
   stage,
   leads,
-  tone,
+  settings,
+  bookingStagePosition,
   interactive,
 }: {
-  stage: LeadStage;
+  stage: StageRow;
   leads: KanbanLeadRow[];
-  tone: string;
+  settings: StageSettings;
+  bookingStagePosition: number;
   interactive: boolean;
 }) {
   return interactive ? (
-    <DroppableColumn stage={stage} leads={leads} tone={tone} />
+    <DroppableColumn
+      stage={stage}
+      leads={leads}
+      settings={settings}
+      bookingStagePosition={bookingStagePosition}
+    />
   ) : (
-    <ColumnShell stage={stage} leads={leads} tone={tone} interactive={false} />
+    <ColumnShell
+      stage={stage}
+      leads={leads}
+      settings={settings}
+      bookingStagePosition={bookingStagePosition}
+      interactive={false}
+    />
   );
 }
 
 function DroppableColumn({
   stage,
   leads,
-  tone,
+  settings,
+  bookingStagePosition,
 }: {
-  stage: LeadStage;
+  stage: StageRow;
   leads: KanbanLeadRow[];
-  tone: string;
+  settings: StageSettings;
+  bookingStagePosition: number;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: stage });
+  const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   return (
     <ColumnShell
       ref={setNodeRef}
       stage={stage}
       leads={leads}
-      tone={tone}
+      settings={settings}
+      bookingStagePosition={bookingStagePosition}
       isOver={isOver}
       interactive
     />
@@ -285,14 +314,16 @@ function DroppableColumn({
 function ColumnShell({
   stage,
   leads,
-  tone,
+  settings,
+  bookingStagePosition,
   isOver = false,
   interactive,
   ref,
 }: {
-  stage: LeadStage;
+  stage: StageRow;
   leads: KanbanLeadRow[];
-  tone: string;
+  settings: StageSettings;
+  bookingStagePosition: number;
   isOver?: boolean;
   interactive: boolean;
   ref?: (node: HTMLElement | null) => void;
@@ -302,22 +333,22 @@ function ColumnShell({
       ref={ref}
       className={cn(
         "flex flex-col bg-(--adm-surface-2) border-t-2 min-w-[240px]",
-        tone,
+        stagePalette(stage.color).tone,
         isOver && "bg-gold/10",
       )}
     >
       <header className="flex items-center justify-between px-3 py-2.5 border-b border-(--adm-border)">
         <h2 className="font-heading text-[0.72rem] uppercase tracking-[0.12em] text-(--adm-text) truncate">
-          {STAGE_LABELS[stage]}
+          {stage.name}
         </h2>
         <div className="flex items-center gap-1.5 shrink-0">
           <span className="font-heading text-xs text-(--adm-text-muted)">
             {leads.length}
           </span>
           <Link
-            href={`/admin/stages/${stage}`}
+            href={`/admin/stages/${stage.id}`}
             className="text-(--adm-text-muted) hover:text-gold text-base leading-none"
-            title={`Edit ${STAGE_LABELS[stage]} automations`}
+            title={`Edit ${stage.name} automations`}
           >
             ⚙
           </Link>
@@ -326,13 +357,16 @@ function ColumnShell({
       <div className="flex-1 px-2 py-2 space-y-2 min-h-[120px]">
         {leads.length === 0 ? (
           <p className="text-xs text-(--adm-text-muted) text-center px-3 py-6">
-            {emptyText(stage)}
+            {stage.description ?? "No leads here yet."}
           </p>
         ) : (
           leads.map((lead) => (
             <KanbanCard
               key={lead.id}
               lead={lead}
+              stage={stage}
+              settings={settings}
+              bookingStagePosition={bookingStagePosition}
               draggable={interactive}
             />
           ))
@@ -340,25 +374,4 @@ function ColumnShell({
       </div>
     </div>
   );
-}
-
-function emptyText(stage: LeadStage): string {
-  switch (stage) {
-    case "new":
-      return "Fresh leads from the form/booking modal land here.";
-    case "stale":
-      return "Move leads here once they've gone cold.";
-    case "booked_a_call":
-      return "Discovery calls scheduled show here.";
-    case "call_completed":
-      return "Move leads here after the discovery call.";
-    case "video_shoot_scheduled":
-      return "Move leads here once the shoot is booked.";
-    case "post_video_shoot":
-      return "Move leads here after the shoot wraps.";
-    case "closed":
-      return "Drop or move leads here once paid.";
-    case "lost":
-      return "Drop or move leads here when they don't convert.";
-  }
 }

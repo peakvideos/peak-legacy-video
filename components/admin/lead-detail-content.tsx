@@ -4,7 +4,6 @@ import { StageActions } from "./stage-actions";
 import { CancelJobButton } from "./cancel-job-button";
 import { OneOffComposer } from "./one-off-composer";
 import { UnsubscribeToggle } from "./unsubscribe-toggle";
-import { TERMINAL_STAGES } from "@/lib/admin/stages";
 import type { LeadDetail } from "@/lib/admin/lead-detail-types";
 
 const PACKAGE_LABELS = {
@@ -34,11 +33,14 @@ const dateFmt = new Intl.DateTimeFormat("en-CA", {
 export function LeadDetailContent({ data }: { data: LeadDetail }) {
   const {
     lead,
+    stages,
     bookings: leadBookings,
     emailJobs: leadJobs,
     nextEmailJob,
     upcomingBooking,
   } = data;
+
+  const currentStage = stages.find((s) => s.id === lead.stageId);
 
   const utm = [
     ["Source", lead.utmSource],
@@ -48,7 +50,8 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
     ["Term", lead.utmTerm],
   ].filter(([, v]) => v) as Array<[string, string]>;
 
-  const showNextEmail = !!nextEmailJob && !TERMINAL_STAGES.has(lead.stage);
+  const isTerminal = !!currentStage && (currentStage.isWon || currentStage.isLost);
+  const showNextEmail = !!nextEmailJob && !isTerminal;
 
   return (
     <div className="space-y-6">
@@ -110,7 +113,11 @@ export function LeadDetailContent({ data }: { data: LeadDetail }) {
         <p className="font-heading text-[0.7rem] uppercase tracking-[0.12em] text-(--adm-text-muted) mb-2">
           Stage
         </p>
-        <StageActions leadId={lead.id} current={lead.stage} />
+        <StageActions
+          leadId={lead.id}
+          currentStageId={lead.stageId}
+          stages={stages}
+        />
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-(--adm-surface) border border-(--adm-border) p-5">

@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { LeadStage } from "@/lib/admin/stages";
-import { STAGE_LABELS } from "@/lib/admin/stages";
+import { stagePalette, type StageRow } from "@/lib/admin/stages";
 
 export type PackageInterest = "legacy" | "heirloom" | "unsure";
 
@@ -29,26 +28,15 @@ export function PackageBadge({ pkg }: { pkg: PackageInterest }) {
   );
 }
 
-const STAGE_TONES: Record<LeadStage, string> = {
-  new: "bg-gold/15 border-gold/40 text-gold",
-  stale: "bg-blush/20 border-blush/45 text-blush",
-  booked_a_call: "bg-gold/15 border-gold/40 text-gold",
-  call_completed: "bg-sky/30 border-tofino/40 text-tofino",
-  video_shoot_scheduled: "bg-moss/20 border-moss/45 text-moss",
-  post_video_shoot: "bg-blush/20 border-blush/45 text-blush",
-  closed: "bg-forest border-forest text-gold",
-  lost: "bg-blush/30 border-blush/60 text-blush",
-};
-
-export function StageBadge({ stage }: { stage: LeadStage }) {
+export function StageBadge({ stage }: { stage: StageRow }) {
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1 px-1.5 py-px border font-heading text-[0.62rem] uppercase tracking-[0.08em]",
-        STAGE_TONES[stage],
+        stagePalette(stage.color).badge,
       )}
     >
-      {STAGE_LABELS[stage]}
+      {stage.name}
     </span>
   );
 }

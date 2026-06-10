@@ -9,19 +9,26 @@ import type { LeadRow } from "@/lib/admin/lead-rows";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function StuckView({ rows }: { rows: LeadRow[] }) {
+export function StuckView({
+  rows,
+  coldThresholdDays,
+}: {
+  rows: LeadRow[];
+  coldThresholdDays: number;
+}) {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       <div className="px-6 py-3 border-b border-(--adm-border) bg-(--adm-surface)">
         <div className="text-lg text-(--adm-text) leading-tight">Stuck leads</div>
         <div className="text-[11px] text-(--adm-text-muted) mt-0.5">
-          No reply within 14 days · {rows.length} leads
+          No reply within {coldThresholdDays} days · {rows.length} leads
         </div>
       </div>
       <div className="flex-1 overflow-auto">
         {rows.length === 0 ? (
           <div className="px-6 py-16 text-center text-sm text-(--adm-text-muted)">
-            No stuck leads. Every active lead has activity in the last 14 days.
+            No stuck leads. Every active lead has activity in the last{" "}
+            {coldThresholdDays} days.
           </div>
         ) : (
           rows.map((l) => <StuckRow key={l.id} lead={l} />)

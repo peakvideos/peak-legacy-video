@@ -1,6 +1,8 @@
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bookings, emailJobs, emailTemplates, leads } from "@/lib/db/schema";
+import { listStageRows } from "@/lib/stages";
+import { getSettings } from "@/lib/stages/settings";
 import { KanbanBoard } from "@/components/admin/kanban-board";
 import type { KanbanLeadRow } from "@/components/admin/kanban-card";
 import { LeadDetailModal } from "@/components/admin/lead-detail-modal";
@@ -16,7 +18,9 @@ export default async function BoardsPage({
 }) {
   const sp = await searchParams;
 
-  const [allLeads, upcomingBookings, nextEmailJobs, detail] = await Promise.all([
+  const [stageRows, settings, allLeads, upcomingBookings, nextEmailJobs, detail] = await Promise.all([
+    listStageRows(),
+    getSettings(),
     db.select().from(leads).orderBy(desc(leads.createdAt)),
     db
       .select()
@@ -65,7 +69,7 @@ export default async function BoardsPage({
     lastName: l.lastName,
     email: l.email,
     packageInterest: l.packageInterest,
-    stage: l.stage,
+    stageId: l.stageId,
     createdAt: l.createdAt,
     updatedAt: l.updatedAt,
     nextEmailJob: nextJobByLead.get(l.id) ?? null,
@@ -88,7 +92,15 @@ export default async function BoardsPage({
           </p>
         </div>
       ) : (
-        <KanbanBoard leads={kanbanLeads} />
+        <KanbanBoard
+          leads={kanbanLeads}
+          stages={stageRows}
+          settings={{
+            entryStageId: settings.entryStageId,
+            bookingStageId: settings.bookingStageId,
+            coldThresholdDays: settings.coldThresholdDays,
+          }}
+        />
       )}
 
       <LeadDetailModal open={!!detail} leadId={detail?.lead.id ?? null}>

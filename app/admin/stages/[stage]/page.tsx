@@ -2,24 +2,33 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { emailTemplates, stageAutomations } from "@/lib/db/schema";
+import { emailTemplates, stageAutomations, stages } from "@/lib/db/schema";
 import { listTemplates } from "@/lib/admin/templates";
-import { STAGE_LABELS, STAGE_ORDER } from "@/lib/admin/stages";
-import type { LeadStage } from "@/lib/email/sequence";
 import { StageAutomationsEditor } from "./stage-automations-editor";
 
 export const dynamic = "force-dynamic";
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default async function StagePage({
   params,
 }: {
   params: Promise<{ stage: string }>;
 }) {
-  const { stage } = await params;
-  if (!(STAGE_ORDER as string[]).includes(stage)) {
+  const { stage: stageId } = await params;
+  if (!UUID_RE.test(stageId)) {
     notFound();
   }
-  const validStage = stage as LeadStage;
+
+  const [stage] = await db
+    .select()
+    .from(stages)
+    .where(eq(stages.id, stageId))
+    .limit(1);
+  if (!stage) {
+    notFound();
+  }
 
   const [automations, templates] = await Promise.all([
     db
@@ -38,7 +47,7 @@ export default async function StagePage({
         emailTemplates,
         eq(stageAutomations.templateId, emailTemplates.id),
       )
-      .where(eq(stageAutomations.stage, validStage))
+      .where(eq(stageAutomations.stageId, stage.id))
       .orderBy(asc(stageAutomations.position)),
     listTemplates({ archived: false }),
   ]);
@@ -65,9 +74,7 @@ export default async function StagePage({
           ← Boards
         </Link>
         <header>
-          <h1 className="text-(--adm-text) text-2xl mb-1">
-            {STAGE_LABELS[validStage]}
-          </h1>
+          <h1 className="text-(--adm-text) text-2xl mb-1">{stage.name}</h1>
           <p className="text-(--adm-text-muted) text-xs">
             Emails queued automatically when a lead enters this stage. Delay is
             measured from the moment they enter.
@@ -75,7 +82,7 @@ export default async function StagePage({
         </header>
 
       <StageAutomationsEditor
-        stage={validStage}
+        stage={stage.id}
         automations={automations.map((a) => ({
           id: a.id,
           templateId: a.templateId,

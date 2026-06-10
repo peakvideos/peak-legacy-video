@@ -2,6 +2,7 @@ import "server-only";
 import { asc, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bookings, emailJobs, emailTemplates, leads } from "@/lib/db/schema";
+import { listStageRows } from "@/lib/stages";
 import type { EmailJobWithTemplate, LeadDetail } from "./lead-detail-types";
 
 export async function loadLeadDetail(leadId: string): Promise<LeadDetail | null> {
@@ -12,7 +13,8 @@ export async function loadLeadDetail(leadId: string): Promise<LeadDetail | null>
     .limit(1);
   if (!lead) return null;
 
-  const [leadBookings, leadJobs] = await Promise.all([
+  const [allStages, leadBookings, leadJobs] = await Promise.all([
+    listStageRows(),
     db
       .select()
       .from(bookings)
@@ -50,6 +52,7 @@ export async function loadLeadDetail(leadId: string): Promise<LeadDetail | null>
 
   return {
     lead,
+    stages: allStages,
     bookings: leadBookings,
     emailJobs: enrichedJobs,
     nextEmailJob,

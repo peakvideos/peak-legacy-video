@@ -3,7 +3,7 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import type { LeadStage } from "@/lib/admin/stages";
+import type { StageRow, StageSettings } from "@/lib/admin/stages";
 import type { LeadDetail } from "@/lib/admin/lead-detail-types";
 
 const PACKAGE_BADGES = {
@@ -26,7 +26,6 @@ const dateTimeFmt = new Intl.DateTimeFormat("en-CA", {
   timeZone: "America/Los_Angeles",
 });
 
-const STALE_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function relativeTime(date: Date): string {
@@ -45,7 +44,7 @@ export type KanbanLeadRow = {
   lastName: string;
   email: string;
   packageInterest: "legacy" | "heirloom" | "unsure";
-  stage: LeadStage;
+  stageId: string;
   createdAt: Date;
   updatedAt: Date;
   nextEmailJob: LeadDetail["nextEmailJob"];
@@ -54,10 +53,18 @@ export type KanbanLeadRow = {
 
 export function KanbanCard({
   lead,
+  stage,
+  settings,
+  bookingStagePosition,
   isOverlay = false,
   draggable = true,
 }: {
   lead: KanbanLeadRow;
+  /** The stage the lead currently sits in. */
+  stage: StageRow | undefined;
+  settings: StageSettings;
+  /** Position of the Booking Stage — cards at or before it talk email-drip. */
+  bookingStagePosition: number;
   isOverlay?: boolean;
   /**
    * When false, the card renders without dnd-kit wiring — used during SSR
@@ -65,14 +72,31 @@ export function KanbanCard({
    */
   draggable?: boolean;
 }) {
+  const body = (
+    <CardBody
+      lead={lead}
+      stage={stage}
+      settings={settings}
+      bookingStagePosition={bookingStagePosition}
+      draggable={draggable && !isOverlay}
+    />
+  );
   return draggable ? (
-    <DraggableCard lead={lead} isOverlay={isOverlay} />
+    <DraggableCard lead={lead} isOverlay={isOverlay}>
+      {body}
+    </DraggableCard>
   ) : (
-    <StaticCard lead={lead} />
+    <StaticCard lead={lead}>{body}</StaticCard>
   );
 }
 
-function StaticCard({ lead }: { lead: KanbanLeadRow }) {
+function StaticCard({
+  lead,
+  children,
+}: {
+  lead: KanbanLeadRow;
+  children: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -82,7 +106,7 @@ function StaticCard({ lead }: { lead: KanbanLeadRow }) {
       onClick={() => openLeadModal(router, pathname, params, lead.id)}
       className={cardClassName({ isDragging: false, isOverlay: false })}
     >
-      <CardBody lead={lead} draggable={false} />
+      {children}
     </button>
   );
 }
@@ -90,9 +114,11 @@ function StaticCard({ lead }: { lead: KanbanLeadRow }) {
 function DraggableCard({
   lead,
   isOverlay,
+  children,
 }: {
   lead: KanbanLeadRow;
   isOverlay: boolean;
+  children: React.ReactNode;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -112,7 +138,7 @@ function DraggableCard({
       {...attributes}
       className={cardClassName({ isDragging, isOverlay })}
     >
-      <CardBody lead={lead} draggable={true} />
+      {children}
     </button>
   );
 }
@@ -145,14 +171,27 @@ function cardClassName({
 
 function CardBody({
   lead,
+  stage,
+  settings,
+  bookingStagePosition,
   draggable,
 }: {
   lead: KanbanLeadRow;
+  stage: StageRow | undefined;
+  settings: StageSettings;
+  bookingStagePosition: number;
   draggable: boolean;
 }) {
+  // Cold = still sitting in the Entry Stage past the cold threshold.
   const isCold =
-    lead.stage === "new" &&
-    Date.now() - lead.createdAt.getTime() > STALE_DAYS * DAY_MS;
+    lead.stageId === settings.entryStageId &&
+    Date.now() - lead.createdAt.getTime() >
+      settings.coldThresholdDays * DAY_MS;
+
+  // Up to the Booking Stage the pipeline is email-driven, so an empty queue
+  // is worth calling out; past it the lead is in the owner's hands and the
+  // last touch matters more.
+  const preBooking = !!stage && stage.position <= bookingStagePosition;
 
   return (
     <>
@@ -177,7 +216,7 @@ function CardBody({
       </div>
       <p className="text-xs text-(--adm-text-muted) truncate mb-2">{lead.email}</p>
 
-      {lead.stage === "booked_a_call" && lead.upcomingBooking && (
+      {lead.stageId === settings.bookingStageId && lead.upcomingBooking && (
         <p className="text-xs font-heading text-gold">
           {dateTimeFmt.format(lead.upcomingBooking.scheduledAt)}
         </p>
@@ -190,18 +229,11 @@ function CardBody({
         </p>
       )}
 
-      {!lead.nextEmailJob &&
-        (lead.stage === "new" ||
-          lead.stage === "stale" ||
-          lead.stage === "booked_a_call") && (
-          <p className="text-[0.7rem] text-(--adm-text-muted)">No emails queued</p>
-        )}
+      {!lead.nextEmailJob && preBooking && (
+        <p className="text-[0.7rem] text-(--adm-text-muted)">No emails queued</p>
+      )}
 
-      {(lead.stage === "closed" ||
-        lead.stage === "lost" ||
-        lead.stage === "post_video_shoot" ||
-        lead.stage === "video_shoot_scheduled" ||
-        lead.stage === "call_completed") && (
+      {!preBooking && (
         <p className="text-[0.7rem] text-(--adm-text-muted)">
           Updated {relativeTime(lead.updatedAt)}
         </p>

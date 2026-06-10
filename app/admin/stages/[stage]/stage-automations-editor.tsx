@@ -24,7 +24,7 @@ import {
   updateAutomation,
 } from "./actions";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
-import type { LeadStage } from "@/lib/email/sequence";
+
 import { cn } from "@/lib/utils";
 
 type Automation = {
@@ -48,7 +48,7 @@ export function StageAutomationsEditor({
   automations,
   availableTemplates,
 }: {
-  stage: LeadStage;
+  stage: string;
   automations: Automation[];
   availableTemplates: AvailableTemplate[];
 }) {
@@ -80,7 +80,7 @@ function SortableAutomationList({
   stage,
   automations,
 }: {
-  stage: LeadStage;
+  stage: string;
   automations: Automation[];
 }) {
   const [mounted, setMounted] = useState(false);
@@ -160,7 +160,7 @@ function AutomationRow({
   automation,
   sortable,
 }: {
-  stage: LeadStage;
+  stage: string;
   automation: Automation;
   sortable: boolean;
 }) {
@@ -323,7 +323,7 @@ function AddAutomationForm({
   stage,
   availableTemplates,
 }: {
-  stage: LeadStage;
+  stage: string;
   availableTemplates: AvailableTemplate[];
 }) {
   const [pending, startTransition] = useTransition();
