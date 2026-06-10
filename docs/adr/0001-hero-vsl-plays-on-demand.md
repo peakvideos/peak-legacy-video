@@ -1,0 +1,3 @@
+# Hero VSL plays on demand, never autoplays
+
+The Hero VSL is a 23-second talking-head video of Marc speaking directly to camera — the spoken audio *is* the content, and the footage has no burned-in captions. Browsers only permit muted autoplay, so an autoplaying hero would show a silent talking man, which reads as broken and discards the message. We therefore show a Poster with a play affordance and play the video only on an explicit click, with sound. Autoplay-muted-with-generated-captions was considered and rejected: it adds caption-production scope to every future video swap, and forces every visitor (mobile included) to download the video whether or not they care. Do not "fix" this by adding `autoplay muted loop` — that undoes the decision, not an oversight.

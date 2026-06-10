@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# raw video masters — only web-optimized derivatives in public/video/ are committed
+/public/legacy videos VSL V1.mp4
+
 # editor
 .obsidian/
 
