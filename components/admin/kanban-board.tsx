@@ -49,10 +49,12 @@ export function KanbanBoard({
   leads,
   stages,
   settings,
+  automationCounts,
 }: {
   leads: KanbanLeadRow[];
   stages: StageRow[];
   settings: StageSettings;
+  automationCounts: Record<string, number>;
 }) {
   // dnd-kit allocates internal IDs (DndDescribedBy-N) using a module-level
   // counter that diverges between SSR and client renders. Gating the
@@ -181,6 +183,7 @@ export function KanbanBoard({
             totalLeadCount={totalLeadCounts.get(stage.id) ?? 0}
             settings={settings}
             bookingStagePosition={bookingStagePosition}
+            automationCount={automationCounts[stage.id] ?? 0}
             interactive={mounted}
           />
         ))}
@@ -286,6 +289,7 @@ function KanbanColumn({
   totalLeadCount,
   settings,
   bookingStagePosition,
+  automationCount,
   interactive,
 }: {
   stage: StageRow;
@@ -294,6 +298,7 @@ function KanbanColumn({
   totalLeadCount: number;
   settings: StageSettings;
   bookingStagePosition: number;
+  automationCount: number;
   interactive: boolean;
 }) {
   return interactive ? (
@@ -304,6 +309,7 @@ function KanbanColumn({
       totalLeadCount={totalLeadCount}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
+      automationCount={automationCount}
     />
   ) : (
     <ColumnShell
@@ -313,6 +319,7 @@ function KanbanColumn({
       totalLeadCount={totalLeadCount}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
+      automationCount={automationCount}
       interactive={false}
     />
   );
@@ -325,6 +332,7 @@ function DroppableColumn({
   totalLeadCount,
   settings,
   bookingStagePosition,
+  automationCount,
 }: {
   stage: StageRow;
   allStages: StageRow[];
@@ -332,6 +340,7 @@ function DroppableColumn({
   totalLeadCount: number;
   settings: StageSettings;
   bookingStagePosition: number;
+  automationCount: number;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.id });
   return (
@@ -343,6 +352,7 @@ function DroppableColumn({
       totalLeadCount={totalLeadCount}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
+      automationCount={automationCount}
       isOver={isOver}
       interactive
     />
@@ -356,6 +366,7 @@ function ColumnShell({
   totalLeadCount,
   settings,
   bookingStagePosition,
+  automationCount,
   isOver = false,
   interactive,
   ref,
@@ -366,6 +377,7 @@ function ColumnShell({
   totalLeadCount: number;
   settings: StageSettings;
   bookingStagePosition: number;
+  automationCount: number;
   isOver?: boolean;
   interactive: boolean;
   ref?: (node: HTMLElement | null) => void;
@@ -384,6 +396,13 @@ function ColumnShell({
           {stage.name}
         </h2>
         <div className="flex items-center gap-1.5 shrink-0">
+          <Link
+            href={`/admin/journey#stage-${stage.id}`}
+            className="font-heading text-xs text-(--adm-text-muted) hover:text-gold"
+            title={`${automationCount} automated email${automationCount === 1 ? "" : "s"} — view in Journey`}
+          >
+            ✉ {automationCount}
+          </Link>
           <span className="font-heading text-xs text-(--adm-text-muted)">
             {leads.length}
           </span>
