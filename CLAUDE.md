@@ -12,10 +12,10 @@ Inbound sales system: landing page + booking modal + owner CRM + email sequences
 - **Database:** PostgreSQL on Railway
 - **ORM:** Drizzle
 - **Auth:** BetterAuth — owner-only, gates the CRM dashboard. Leads do not have accounts.
-- **Email:** Resend (transactional + sequence drip)
+- **Email:** Gmail SMTP via nodemailer (App Password on `peaklegacyvideos@gmail.com`) — transactional + sequence drip. The drip queue is fired by a Railway cron function outside this repo (see `docs/dev/README.md` → Scheduled tasks)
 - **Calendar:** Google Calendar API v3 with OAuth 2.0 — source of truth for availability against `peaklegacyvideos@gmail.com`
 - **Analytics:** Meta Pixel (PageView on load, Lead on booking)
-- **Hosting:** Vercel (web) + Railway (Postgres)
+- **Hosting:** Vercel (web) + Railway (Postgres + email-cron function)
 - **Package manager:** pnpm
 
 ## Brand tokens

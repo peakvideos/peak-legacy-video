@@ -12,7 +12,7 @@ All five integrations need credentials. See [README.md](./README.md) for the per
 - [ ] [Gmail SMTP](./gmail-smtp-setup.md) — `GMAIL_SMTP_USER`, `GMAIL_SMTP_PASSWORD` (App Password), `EMAIL_FROM`, `OWNER_NOTIFICATION_EMAIL`
 - [ ] [Meta Pixel](./meta-pixel-setup.md) — `NEXT_PUBLIC_META_PIXEL_ID`
 - [ ] [Owner sign-in](./auth-setup.md) — `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `OWNER_EMAILS`, `GOOGLE_OAUTH_CLIENT_ID`, `_SECRET`
-- [ ] `CRON_SECRET` set (Vercel auto-populates this)
+- [ ] `CRON_SECRET` set in Vercel **and** on the Railway cron function — the two values must match byte-for-byte (no quotes, no trailing newline). See [README.md → Scheduled tasks](./README.md#scheduled-tasks).
 - [ ] `NEXT_PUBLIC_BASE_URL` matches the production domain
 - [ ] `NEXT_PUBLIC_NOINDEX` is unset (or `false`) in production — set to `true` only on preview/staging
 
@@ -22,7 +22,7 @@ All five integrations need credentials. See [README.md](./README.md) for the per
 - [ ] Environment variables copied into Vercel project settings (Production scope at minimum; Preview scope for staging deploys)
 - [ ] Custom domain added and DNS verified
 - [ ] Deploy succeeds (`vercel --prod` or push to main)
-- [ ] Confirm `vercel.json` cron is registered in Project → Crons. Should show `*/5 * * * *` for `/api/cron/email-jobs`.
+- [ ] Confirm the Railway cron function (`function-bun` in the owner's Railway project) hits `https://www.peaklegacyvideos.com/api/cron/email-jobs` (the `www` host — the apex redirect strips the auth header) and its latest run logged a 200. There is no Vercel cron.
 
 ## 3 · End-to-end smoke (production)
 
@@ -35,7 +35,7 @@ Run from a fresh browser session in incognito.
 - [ ] Submit step 1 with a real email you can check. Click Next.
 - [ ] Close the modal before completing the booking.
 - [ ] Check `/admin` — lead row exists, status = `Not yet booked`. Lead detail shows 5 sequence jobs, all `pending`.
-- [ ] Wait 5+ minutes for the cron to fire. Email 1 ("Thanks for reaching out…") should arrive.
+- [ ] Wait 10+ minutes for the Railway cron to fire. Email 1 ("Thanks for reaching out…") should arrive.
 - [ ] In `/admin/leads/[id]`, step 1 status flips to `sent` with a `sent_at` timestamp.
 
 ### Path B — lead submits and books

@@ -7,6 +7,10 @@ Internal notes for building and operating the Peak Studios CO booking system.
 - [build-order.md](./build-order.md) — phased delivery plan (Phase 0 through Phase 7).
 - [launch-checklist.md](./launch-checklist.md) — pre-launch + post-launch operational checklist.
 
+## Architecture decisions
+
+- [ADR 0001](../adr/0001-gmail-smtp-over-esp.md) — why email sends from the owner's personal Gmail (SMTP App Password) instead of an ESP like Resend.
+
 ## Third-party setup guides
 
 Each integration we depend on has a setup guide written for the **owner** (non-technical) plus a **"Dev steps once credentials arrive"** section at the end of each doc that tells the developer what to do when the values land.
@@ -35,9 +39,28 @@ This means you can ship Phase 4 end-to-end with credentials still pending, and t
 
 ## Scheduled tasks
 
-`vercel.json` registers one cron: `POST /api/cron/email-jobs` every 5 minutes. The route reads `CRON_SECRET` from the env and rejects any request whose `Authorization: Bearer <secret>` header doesn't match.
+The email queue (`/api/cron/email-jobs`) is triggered by a **Railway cron function** in the owner's Railway account (Peak Studios, `peaklegacyvideos@gmail.com`). Its source is checked into this repo at [`railway/email-cron.ts`](../../railway/email-cron.ts) — edit it there and deploy with `railway functions push -p railway/email-cron.ts` (from a directory linked to the project; one-time setup: `railway link`, then `railway functions link --function function-bun --path railway/email-cron.ts`).
 
-- **On Vercel**: Vercel automatically populates `CRON_SECRET` and sends it as the bearer token on every cron invocation. No setup beyond having the env var present.
+- **Project**: Peak Legacy Video (same project that hosts the production Postgres)
+- **Service**: `function-bun` — a Railway Function (Bun) on a 5-minute cron schedule
+- **What it does**: (1) POSTs `${APP_BASE_URL}/api/cron/email-jobs` with an `Authorization: Bearer ${CRON_SECRET}` header to drain the queue, then (2) probes `${APP_BASE_URL}/api/health`. If either fails, the run exits non-zero, which Railway surfaces as a failed deployment — enable deploy-failure notifications in the Railway workspace settings to get emailed about it. (A 404 from `/api/health` only warns, so the function works before the health endpoint ships.)
+- **Its env vars**: `APP_BASE_URL` and `CRON_SECRET`
+- **Caveat**: the watchdog lives inside Railway — if Railway or the function itself stops running, nothing alerts. An external pinger on `/api/health` (UptimeRobot et al.) remains an optional extra layer.
+
+The route reads `CRON_SECRET` from the Vercel env and rejects any request whose `Authorization: Bearer <secret>` header doesn't match exactly.
+
+Two hard-won operational gotchas (both caused a silent multi-week outage in May–June 2026):
+
+1. **`APP_BASE_URL` must be `https://www.peaklegacyvideos.com` — with the `www`.** The apex domain 307-redirects to `www`, and `fetch`/`curl` strip the `Authorization` header on cross-host redirects, so every request lands unauthenticated and gets a 401.
+2. **The `CRON_SECRET` values on Railway and Vercel must match byte-for-byte** — no surrounding quotes, no trailing newline. Note that `vercel env pull` cannot read this project's values back (it returns empty strings for all encrypted vars), so don't use it to verify. Verify functionally instead:
+
+  ```bash
+  curl -s -w "\nHTTP %{http_code}\n" \
+    -H "Authorization: Bearer $CRON_SECRET" \
+    https://www.peaklegacyvideos.com/api/cron/email-jobs
+  # expect: {"ok":true,"picked":N,...} HTTP 200
+  ```
+
 - **Locally**: set any value in `.env.local` (`openssl rand -base64 32`), then trigger manually:
 
   ```bash
@@ -46,3 +69,5 @@ This means you can ship Phase 4 end-to-end with credentials still pending, and t
   ```
 
   The endpoint picks up at most 25 due jobs per call, sends each via Gmail SMTP, retries failures with backoff (1m → 5m → 30m → 2h → 6h, then `failed`), and marks already-booked leads' jobs as `cancelled`.
+
+There is **no Vercel cron** — `vercel.json` was removed because Vercel's Hobby plan caps crons at once per day.
