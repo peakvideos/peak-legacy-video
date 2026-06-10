@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { bookings, leads } from "@/lib/db/schema";
+import { bookings, leads, stages } from "@/lib/db/schema";
+import { getSettings } from "@/lib/stages/settings";
 import {
   createBookingEvent,
   findSlotByLabel,
@@ -136,6 +137,13 @@ export async function POST(req: Request) {
         throw new ConflictError("That slot was just booked. Please pick another time.");
       }
 
+      const { bookingStageId } = await getSettings({ tx });
+      const [bookingStage] = await tx
+        .select({ id: stages.id, position: stages.position })
+        .from(stages)
+        .where(eq(stages.id, bookingStageId))
+        .limit(1);
+
       const utm = body.utm ?? {};
       const [lead] = await tx
         .insert(leads)
@@ -152,7 +160,7 @@ export async function POST(req: Request) {
           utmCampaign: utm.campaign || null,
           utmContent: utm.content || null,
           utmTerm: utm.term || null,
-          stage: "booked_a_call",
+          stageId: bookingStage.id,
         })
         .onConflictDoUpdate({
           target: leads.email,
@@ -168,15 +176,14 @@ export async function POST(req: Request) {
             ...(utm.campaign && { utmCampaign: utm.campaign }),
             ...(utm.content && { utmContent: utm.content }),
             ...(utm.term && { utmTerm: utm.term }),
-            // Promote leads from `new` or `stale` to `booked_a_call` on a
-            // fresh booking. Don't overwrite owner-set decisions further
-            // down the funnel (call_completed, video_shoot_scheduled,
-            // post_video_shoot, closed, lost).
-            stage: sql`CASE WHEN ${leads.stage} IN ('new', 'stale') THEN 'booked_a_call'::lead_stage ELSE ${leads.stage} END`,
+            // Forward-only promotion: a fresh booking moves the lead to the
+            // Booking Stage only from stages positioned before it. A lead
+            // at or past the Booking Stage keeps the owner's placement.
+            stageId: sql`CASE WHEN (SELECT s."position" FROM "stages" s WHERE s."id" = ${leads.stageId}) < ${bookingStage.position} THEN ${bookingStage.id}::uuid ELSE ${leads.stageId} END`,
             updatedAt: new Date(),
           },
         })
-        .returning({ id: leads.id, stage: leads.stage });
+        .returning({ id: leads.id, stageId: leads.stageId });
 
       const [booking] = await tx
         .insert(bookings)
@@ -187,12 +194,12 @@ export async function POST(req: Request) {
         })
         .returning({ id: bookings.id });
 
-      // If this booking moved the lead into `booked_a_call`, swap the
-      // stale-stage drip out for the booked_a_call automations. If they were
-      // already booked or further along, leave the queue alone — sending
-      // duplicate "you booked!" emails is worse than silence.
-      if (lead.stage === "booked_a_call") {
-        await transitionLeadStageAutomations(lead.id, "booked_a_call", { tx });
+      // If this booking left the lead in the Booking Stage, swap whatever
+      // drip was queued for the Booking Stage automations. If they were
+      // further along, leave the queue alone — sending duplicate "you
+      // booked!" emails is worse than silence.
+      if (lead.stageId === bookingStage.id) {
+        await transitionLeadStageAutomations(lead.id, bookingStage.id, { tx });
       }
 
       return { leadId: lead.id, bookingId: booking.id };

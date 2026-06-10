@@ -21,17 +21,6 @@ export const packageInterest = pgEnum("package_interest", [
   "unsure",
 ]);
 
-export const leadStage = pgEnum("lead_stage", [
-  "new",
-  "stale",
-  "booked_a_call",
-  "call_completed",
-  "video_shoot_scheduled",
-  "post_video_shoot",
-  "closed",
-  "lost",
-]);
-
 export const bookingStatus = pgEnum("booking_status", [
   "scheduled",
   "cancelled",
@@ -116,7 +105,9 @@ export const leads = pgTable(
     utmCampaign: text(),
     utmContent: text(),
     utmTerm: text(),
-    stage: leadStage().notNull().default("new"),
+    stageId: uuid()
+      .notNull()
+      .references(() => stages.id, { onDelete: "restrict" }),
     crmNotes: text(),
     unsubscribedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -127,7 +118,7 @@ export const leads = pgTable(
   },
   (t) => [
     index("leads_created_at_idx").on(t.createdAt),
-    index("leads_stage_idx").on(t.stage),
+    index("leads_stage_id_idx").on(t.stageId),
   ],
 );
 
@@ -175,7 +166,9 @@ export const stageAutomations = pgTable(
   "stage_automations",
   {
     id: uuid().primaryKey().defaultRandom(),
-    stage: leadStage().notNull(),
+    stageId: uuid()
+      .notNull()
+      .references(() => stages.id, { onDelete: "cascade" }),
     templateId: uuid()
       .notNull()
       .references(() => emailTemplates.id, { onDelete: "restrict" }),
@@ -188,8 +181,8 @@ export const stageAutomations = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
-    index("stage_automations_stage_idx").on(t.stage, t.position),
-    uniqueIndex("stage_automations_stage_template_uniq").on(t.stage, t.templateId),
+    index("stage_automations_stage_id_idx").on(t.stageId, t.position),
+    uniqueIndex("stage_automations_stage_template_uniq").on(t.stageId, t.templateId),
   ],
 );
 
@@ -305,7 +298,13 @@ export const verifications = pgTable(
 
 // ── Relations ─────────────────────────────────────────────────────
 
-export const leadsRelations = relations(leads, ({ many }) => ({
+export const stagesRelations = relations(stages, ({ many }) => ({
+  leads: many(leads),
+  stageAutomations: many(stageAutomations),
+}));
+
+export const leadsRelations = relations(leads, ({ one, many }) => ({
+  stage: one(stages, { fields: [leads.stageId], references: [stages.id] }),
   bookings: many(bookings),
   emailJobs: many(emailJobs),
 }));
@@ -322,6 +321,10 @@ export const emailTemplatesRelations = relations(emailTemplates, ({ many }) => (
 export const stageAutomationsRelations = relations(
   stageAutomations,
   ({ one }) => ({
+    stage: one(stages, {
+      fields: [stageAutomations.stageId],
+      references: [stages.id],
+    }),
     template: one(emailTemplates, {
       fields: [stageAutomations.templateId],
       references: [emailTemplates.id],

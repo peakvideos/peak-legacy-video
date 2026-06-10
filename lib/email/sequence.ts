@@ -1,29 +1,20 @@
 import "server-only";
-import { and, eq, inArray, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { emailJobs, leads, stageAutomations } from "@/lib/db/schema";
-
-export type LeadStage =
-  | "new"
-  | "stale"
-  | "booked_a_call"
-  | "call_completed"
-  | "video_shoot_scheduled"
-  | "post_video_shoot"
-  | "closed"
-  | "lost";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /**
- * Schedules every automation configured for `stage` for this lead, anchored
- * to `from`. Skips any template that has already been delivered (status =
- * `sent`) so re-entering a stage doesn't duplicate emails. Cancelled prior
- * jobs don't count — those represent attempts we never delivered.
+ * Schedules every automation configured for the stage for this lead,
+ * anchored to `from`. Skips any template that has already been delivered
+ * (status = `sent`) so re-entering a stage doesn't duplicate emails.
+ * Cancelled prior jobs don't count — those represent attempts we never
+ * delivered.
  */
 export async function enqueueAutomationsForStage(
   leadId: string,
-  stage: LeadStage,
+  stageId: string,
   options: { from?: Date; tx?: Tx } = {},
 ): Promise<{ enqueued: number; skipped: number }> {
   const runner = options.tx ?? db;
@@ -35,7 +26,7 @@ export async function enqueueAutomationsForStage(
       delayMinutes: stageAutomations.delayMinutes,
     })
     .from(stageAutomations)
-    .where(eq(stageAutomations.stage, stage))
+    .where(eq(stageAutomations.stageId, stageId))
     .orderBy(stageAutomations.position);
 
   if (automations.length === 0) {
@@ -95,7 +86,7 @@ export async function cancelPendingForLead(
  */
 export async function transitionLeadStageAutomations(
   leadId: string,
-  newStage: LeadStage,
+  newStageId: string,
   options: { tx?: Tx; from?: Date } = {},
 ): Promise<{ enqueued: number; skipped: number; cancelled: number }> {
   const runner = options.tx ?? db;
@@ -110,7 +101,7 @@ export async function transitionLeadStageAutomations(
 
   const enqueueResult = await enqueueAutomationsForStage(
     leadId,
-    newStage,
+    newStageId,
     options,
   );
 
@@ -127,7 +118,7 @@ export async function transitionLeadStageAutomations(
  * to the stage. Called from the automation editor server action.
  */
 export async function reconcileAutomationsForStage(
-  stage: LeadStage,
+  stageId: string,
   options: { tx?: Tx } = {},
 ): Promise<{ cancelled: number }> {
   const runner = options.tx ?? db;
@@ -135,14 +126,14 @@ export async function reconcileAutomationsForStage(
   const remaining = await runner
     .select({ templateId: stageAutomations.templateId })
     .from(stageAutomations)
-    .where(eq(stageAutomations.stage, stage));
+    .where(eq(stageAutomations.stageId, stageId));
   const remainingIds = remaining.map((r) => r.templateId);
 
   // Find lead ids currently in this stage so we can scope the cancellation.
   const leadsInStage = await runner
     .select({ id: leads.id })
     .from(leads)
-    .where(eq(leads.stage, stage));
+    .where(eq(leads.stageId, stageId));
   const leadIds = leadsInStage.map((l) => l.id);
 
   if (leadIds.length === 0) {
@@ -166,6 +157,3 @@ export async function reconcileAutomationsForStage(
 
   return { cancelled: result.length };
 }
-
-// Touch the imports we keep around for typing/eslint consistency.
-void sql;

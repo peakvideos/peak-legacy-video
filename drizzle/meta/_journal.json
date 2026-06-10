@@ -29,6 +29,20 @@
       "when": 1781125990216,
       "tag": "0003_stages_and_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781126438639,
+      "tag": "0004_add_stage_id_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781126474490,
+      "tag": "0005_drop_stage_enum",
+      "breakpoints": true
     }
   ]
 }

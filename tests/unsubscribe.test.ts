@@ -19,13 +19,13 @@ async function reloadLead(id: string) {
   return row;
 }
 
-/** A lead in `new` with two pending automation emails queued. */
+/** A lead in the Entry Stage with two pending automation emails queued. */
 async function leadWithPendingEmails() {
-  const lead = await createLead({ stage: "new" });
+  const lead = await createLead();
   const first = await createTemplate();
   const second = await createTemplate();
-  await attachAutomation("new", first.id, { position: 0 });
-  await attachAutomation("new", second.id, { position: 1 });
+  await attachAutomation(lead.stageId, first.id, { position: 0 });
+  await attachAutomation(lead.stageId, second.id, { position: 1 });
   await createEmailJob(lead.id, first.id);
   await createEmailJob(lead.id, second.id, {
     sendAt: new Date(Date.now() + 3_600_000),

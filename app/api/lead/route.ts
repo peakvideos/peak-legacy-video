@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { leads } from "@/lib/db/schema";
 import { enqueueAutomationsForStage } from "@/lib/email/sequence";
+import { getSettings } from "@/lib/stages/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,8 @@ export async function POST(req: Request) {
 
   try {
     const result = await db.transaction(async (tx) => {
+      const { entryStageId } = await getSettings({ tx });
+
       const [lead] = await tx
         .insert(leads)
         .values({
@@ -61,7 +64,7 @@ export async function POST(req: Request) {
           utmCampaign: utm.campaign || null,
           utmContent: utm.content || null,
           utmTerm: utm.term || null,
-          stage: "new",
+          stageId: entryStageId,
         })
         .onConflictDoUpdate({
           target: leads.email,
@@ -81,14 +84,13 @@ export async function POST(req: Request) {
             updatedAt: new Date(),
           },
         })
-        .returning({ id: leads.id, stage: leads.stage });
+        .returning({ id: leads.id, stageId: leads.stageId });
 
-      // Form-only path: only run the new-stage automations when this is a
-      // fresh lead (or someone we'd already classified as new). Don't
-      // disturb a lead who's already further along in the funnel — or one
-      // the owner has explicitly parked in `stale`.
-      if (lead.stage === "new") {
-        await enqueueAutomationsForStage(lead.id, "new", { tx });
+      // Form-only path: only run the Entry Stage automations when this is a
+      // fresh lead (or someone still sitting in the Entry Stage). Don't
+      // disturb a lead who's already elsewhere in the pipeline.
+      if (lead.stageId === entryStageId) {
+        await enqueueAutomationsForStage(lead.id, entryStageId, { tx });
       }
 
       return { leadId: lead.id };

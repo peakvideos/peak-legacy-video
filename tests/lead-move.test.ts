@@ -1,5 +1,6 @@
 import { beforeEach, expect, test } from "vitest";
 import { setLeadStage } from "@/app/admin/actions";
+import { getSettings } from "@/lib/stages/settings";
 import { signInAsOwner } from "./helpers/auth";
 import { resetTestRequestHeaders } from "./stubs/next-headers";
 import {
@@ -8,6 +9,7 @@ import {
   createLead,
   createTemplate,
   jobsForLead,
+  stageByName,
 } from "./helpers/fixtures";
 
 const MINUTE = 60_000;
@@ -17,18 +19,20 @@ beforeEach(async () => {
 });
 
 test("moving a lead cancels the departed stage's pending emails and enqueues the new stage's, delays counted from entry", async () => {
+  const { entryStageId } = await getSettings();
+  const callCompleted = await stageByName("Call completed");
   const nurture = await createTemplate();
   const callRecap = await createTemplate();
-  await attachAutomation("new", nurture.id);
-  await attachAutomation("call_completed", callRecap.id, { delayMinutes: 30 });
+  await attachAutomation(entryStageId, nurture.id);
+  await attachAutomation(callCompleted.id, callRecap.id, { delayMinutes: 30 });
 
-  const lead = await createLead({ stage: "new" });
+  const lead = await createLead();
   const queued = await createEmailJob(lead.id, nurture.id, {
     sendAt: new Date(Date.now() + 60 * MINUTE),
   });
 
   const before = Date.now();
-  await setLeadStage(lead.id, "call_completed");
+  await setLeadStage(lead.id, callCompleted.id);
 
   const jobs = await jobsForLead(lead.id);
   expect(jobs).toHaveLength(2);
@@ -47,18 +51,19 @@ test("moving a lead cancels the departed stage's pending emails and enqueues the
 });
 
 test("templates the lead has already received are skipped when entering a stage that automates them", async () => {
+  const callCompleted = await stageByName("Call completed");
   const recap = await createTemplate();
   const checkIn = await createTemplate();
-  await attachAutomation("call_completed", recap.id, { position: 0 });
-  await attachAutomation("call_completed", checkIn.id, { position: 1 });
+  await attachAutomation(callCompleted.id, recap.id, { position: 0 });
+  await attachAutomation(callCompleted.id, checkIn.id, { position: 1 });
 
-  const lead = await createLead({ stage: "new" });
+  const lead = await createLead();
   await createEmailJob(lead.id, recap.id, {
     status: "sent",
     sentAt: new Date(),
   });
 
-  await setLeadStage(lead.id, "call_completed");
+  await setLeadStage(lead.id, callCompleted.id);
 
   const jobs = await jobsForLead(lead.id);
   const pending = jobs.filter((j) => j.status === "pending");
@@ -67,14 +72,15 @@ test("templates the lead has already received are skipped when entering a stage 
 });
 
 test("a same-stage move leaves the queued emails alone", async () => {
+  const { entryStageId } = await getSettings();
   const nurture = await createTemplate();
-  await attachAutomation("new", nurture.id);
-  const lead = await createLead({ stage: "new" });
+  await attachAutomation(entryStageId, nurture.id);
+  const lead = await createLead();
   const queued = await createEmailJob(lead.id, nurture.id, {
     sendAt: new Date(Date.now() + 60 * MINUTE),
   });
 
-  await setLeadStage(lead.id, "new");
+  await setLeadStage(lead.id, entryStageId);
 
   const jobs = await jobsForLead(lead.id);
   expect(jobs).toHaveLength(1);
@@ -84,7 +90,8 @@ test("a same-stage move leaves the queued emails alone", async () => {
 
 test("moving a lead requires an authenticated session", async () => {
   resetTestRequestHeaders();
-  const lead = await createLead({ stage: "new" });
+  const lead = await createLead();
+  const stale = await stageByName("Stale");
 
-  await expect(setLeadStage(lead.id, "stale")).rejects.toThrow("Unauthorized");
+  await expect(setLeadStage(lead.id, stale.id)).rejects.toThrow("Unauthorized");
 });
