@@ -3,12 +3,14 @@ import { expect, test } from "vitest";
 import { db } from "@/lib/db";
 import { emailJobs } from "@/lib/db/schema";
 import { GET as runWorker } from "@/app/api/cron/email-jobs/route";
+import { getSettings } from "@/lib/stages/settings";
 import { smtp } from "./stubs/nodemailer";
 import {
   attachAutomation,
   createEmailJob,
   createLead,
   createTemplate,
+  stageByName,
   tiptapDoc,
 } from "./helpers/fixtures";
 
@@ -30,9 +32,9 @@ async function dueJob(args: {
   template?: Parameters<typeof createTemplate>[0];
   job?: Record<string, unknown>;
 } = {}) {
-  const lead = await createLead({ stage: "new", ...args.lead });
+  const lead = await createLead(args.lead);
   const template = await createTemplate(args.template);
-  await attachAutomation(lead.stage, template.id);
+  await attachAutomation(lead.stageId, template.id);
   const job = await createEmailJob(lead.id, template.id, {
     sendAt: new Date(Date.now() - MINUTE),
     ...args.job,
@@ -75,10 +77,11 @@ test("a due job is rendered with the lead's variables, sent, and marked sent wit
 });
 
 test("a batch picks up at most 25 due jobs, oldest first; the rest wait for the next run", async () => {
+  const { entryStageId } = await getSettings();
   const template = await createTemplate();
-  await attachAutomation("new", template.id);
+  await attachAutomation(entryStageId, template.id);
   for (let i = 0; i < 30; i++) {
-    const lead = await createLead({ stage: "new" });
+    const lead = await createLead();
     // Oldest jobs first: index 0 is the most overdue.
     await createEmailJob(lead.id, template.id, {
       sendAt: new Date(Date.now() - (30 - i) * MINUTE),
@@ -167,10 +170,12 @@ test("due jobs whose template was archived are cancelled without sending", async
 });
 
 test("due jobs whose template is no longer an automation of the lead's current stage are cancelled", async () => {
-  // The template is attached to `new`, but the lead has since moved to `stale`.
-  const lead = await createLead({ stage: "stale" });
+  // The template is attached to the Entry Stage, but the lead has since moved.
+  const { entryStageId } = await getSettings();
+  const stale = await stageByName("Stale");
+  const lead = await createLead({ stageId: stale.id });
   const template = await createTemplate();
-  await attachAutomation("new", template.id);
+  await attachAutomation(entryStageId, template.id);
   const job = await createEmailJob(lead.id, template.id, {
     sendAt: new Date(Date.now() - MINUTE),
   });

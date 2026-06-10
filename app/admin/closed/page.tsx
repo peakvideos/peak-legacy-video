@@ -13,7 +13,7 @@ export default async function ClosedPage({
 }) {
   const sp = await searchParams;
   const [paid, lost, detail] = await Promise.all([
-    loadClosedLeadRows("closed"),
+    loadClosedLeadRows("won"),
     loadClosedLeadRows("lost"),
     sp.lead ? loadLeadDetail(sp.lead) : null,
   ]);

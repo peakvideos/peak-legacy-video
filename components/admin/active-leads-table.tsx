@@ -17,11 +17,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  ACTIVE_STAGES,
-  STAGE_LABELS,
-  STAGE_ORDER,
+  splitBoardViews,
+  type StageRow,
+  type StageSettings,
 } from "@/lib/admin/stages";
-import type { LeadStage } from "@/lib/admin/stages";
 import type { LeadRow } from "@/lib/admin/lead-rows";
 import {
   Avatar,
@@ -37,45 +36,44 @@ type SortId = "recent" | "submitted" | "oldest" | "stage";
 type SortOption = {
   id: SortId;
   label: string;
-  fn: (a: LeadRow, b: LeadRow) => number;
 };
 
 const SORT_OPTIONS: SortOption[] = [
-  {
-    id: "recent",
-    label: "Last activity",
-    fn: (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
-  },
-  {
-    id: "submitted",
-    label: "Newest submitted",
-    fn: (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-  },
-  {
-    id: "oldest",
-    label: "Oldest submitted",
-    fn: (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-  },
-  {
-    id: "stage",
-    label: "Stage order",
-    fn: (a, b) =>
-      STAGE_ORDER.indexOf(a.stage) - STAGE_ORDER.indexOf(b.stage),
-  },
+  { id: "recent", label: "Last activity" },
+  { id: "submitted", label: "Newest submitted" },
+  { id: "oldest", label: "Oldest submitted" },
+  { id: "stage", label: "Stage order" },
 ];
 
-type StageFilter = LeadStage | "all";
+type StageFilter = string | "all";
 type PkgFilter = LeadRow["packageInterest"] | "all";
 
-export function ActiveLeadsTable({ rows }: { rows: LeadRow[] }) {
+export function ActiveLeadsTable({
+  rows,
+  stages,
+  settings,
+}: {
+  rows: LeadRow[];
+  stages: StageRow[];
+  settings: StageSettings;
+}) {
   const [sortId, setSortId] = useState<SortId>("recent");
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [pkgFilter, setPkgFilter] = useState<PkgFilter>("all");
   const [query, setQuery] = useState("");
 
+  const stageById = useMemo(
+    () => new Map(stages.map((s) => [s.id, s])),
+    [stages],
+  );
+  const funnelStages = useMemo(
+    () => splitBoardViews(stages).active,
+    [stages],
+  );
+
   const filtered = useMemo(() => {
     return rows.filter((l) => {
-      if (stageFilter !== "all" && l.stage !== stageFilter) return false;
+      if (stageFilter !== "all" && l.stageId !== stageFilter) return false;
       if (pkgFilter !== "all" && l.packageInterest !== pkgFilter) return false;
       if (query) {
         const q = query.toLowerCase();
@@ -92,17 +90,27 @@ export function ActiveLeadsTable({ rows }: { rows: LeadRow[] }) {
     });
   }, [rows, stageFilter, pkgFilter, query]);
 
-  const sortFn =
-    SORT_OPTIONS.find((s) => s.id === sortId)?.fn ?? SORT_OPTIONS[0].fn;
-  const sorted = useMemo(() => [...filtered].sort(sortFn), [filtered, sortFn]);
+  const sorted = useMemo(() => {
+    const fns: Record<SortId, (a: LeadRow, b: LeadRow) => number> = {
+      recent: (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+      submitted: (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+      oldest: (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+      stage: (a, b) =>
+        (stageById.get(a.stageId)?.position ?? Infinity) -
+        (stageById.get(b.stageId)?.position ?? Infinity),
+    };
+    return [...filtered].sort(fns[sortId]);
+  }, [filtered, sortId, stageById]);
 
   const grouped = sortId === "stage";
-  const stageGroups: Array<{ stage: LeadStage | null; rows: LeadRow[] }> =
+  const stageGroups: Array<{ stage: StageRow | null; rows: LeadRow[] }> =
     grouped
-      ? ACTIVE_STAGES.map((s) => ({
-          stage: s,
-          rows: sorted.filter((r) => r.stage === s),
-        })).filter((g) => g.rows.length > 0)
+      ? funnelStages
+          .map((s) => ({
+            stage: s as StageRow | null,
+            rows: sorted.filter((r) => r.stageId === s.id),
+          }))
+          .filter((g) => g.rows.length > 0)
       : [{ stage: null, rows: sorted }];
 
   const sortLabel =
@@ -134,9 +142,9 @@ export function ActiveLeadsTable({ rows }: { rows: LeadRow[] }) {
             onChange={(v) => setStageFilter(v as StageFilter)}
             options={[
               { id: "all", label: "All stages" },
-              ...ACTIVE_STAGES.map((s) => ({
-                id: s,
-                label: STAGE_LABELS[s],
+              ...funnelStages.map((s) => ({
+                id: s.id,
+                label: s.name,
               })),
             ]}
           />
@@ -173,9 +181,11 @@ export function ActiveLeadsTable({ rows }: { rows: LeadRow[] }) {
           <tbody>
             {stageGroups.map((g) => (
               <RowGroup
-                key={g.stage ?? "all"}
+                key={g.stage?.id ?? "all"}
                 stage={g.stage}
                 rows={g.rows}
+                stageById={stageById}
+                coldThresholdDays={settings.coldThresholdDays}
                 showEmpty={!g.stage && g.rows.length === 0}
               />
             ))}
@@ -206,10 +216,14 @@ function Th({
 function RowGroup({
   stage,
   rows,
+  stageById,
+  coldThresholdDays,
   showEmpty,
 }: {
-  stage: LeadStage | null;
+  stage: StageRow | null;
   rows: LeadRow[];
+  stageById: Map<string, StageRow>;
+  coldThresholdDays: number;
   showEmpty: boolean;
 }) {
   if (showEmpty) {
@@ -230,7 +244,7 @@ function RowGroup({
         <tr>
           <td colSpan={6} className="bg-(--adm-surface-2) px-4 pt-3.5 pb-1.5">
             <span className="font-heading text-[0.6rem] uppercase tracking-[0.18em] text-(--adm-text-muted)">
-              {STAGE_LABELS[stage]}
+              {stage.name}
             </span>
             <span className="ml-2.5 font-heading text-[11px] text-(--adm-text-muted) opacity-70">
               {rows.length}
@@ -239,13 +253,26 @@ function RowGroup({
         </tr>
       )}
       {rows.map((l) => (
-        <Row key={l.id} lead={l} />
+        <Row
+          key={l.id}
+          lead={l}
+          stage={stageById.get(l.stageId)}
+          coldThresholdDays={coldThresholdDays}
+        />
       ))}
     </>
   );
 }
 
-function Row({ lead }: { lead: LeadRow }) {
+function Row({
+  lead,
+  stage,
+  coldThresholdDays,
+}: {
+  lead: LeadRow;
+  stage: StageRow | undefined;
+  coldThresholdDays: number;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -257,7 +284,7 @@ function Row({ lead }: { lead: LeadRow }) {
     router.push(`${pathname}?${sp.toString()}`, { scroll: false });
   };
 
-  const nextAction = computeNextAction(lead);
+  const nextAction = computeNextAction(lead, stage, coldThresholdDays);
   const NextIcon = nextAction.icon;
 
   return (
@@ -288,7 +315,7 @@ function Row({ lead }: { lead: LeadRow }) {
         <PackageBadge pkg={lead.packageInterest} />
       </td>
       <td className="py-3 px-4">
-        <StageBadge stage={lead.stage} />
+        {stage && <StageBadge stage={stage} />}
       </td>
       <td className="py-3 px-4 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
@@ -335,7 +362,13 @@ function Row({ lead }: { lead: LeadRow }) {
   );
 }
 
-function computeNextAction(lead: LeadRow) {
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function computeNextAction(
+  lead: LeadRow,
+  stage: StageRow | undefined,
+  coldThresholdDays: number,
+) {
   if (lead.upcomingBookingAt) {
     return {
       icon: Calendar,
@@ -343,7 +376,7 @@ function computeNextAction(lead: LeadRow) {
       main: `Call · ${dayLabel(lead.upcomingBookingAt)} · ${timeLabel(lead.upcomingBookingAt)}`,
     };
   }
-  if (lead.stage === "call_completed" || lead.stage === "post_video_shoot") {
+  if (stage?.needsAction) {
     return { icon: Bell, tone: "text-blush", main: "Reply needed" };
   }
   if (lead.nextEmailName && lead.nextEmailSendAt) {
@@ -353,7 +386,7 @@ function computeNextAction(lead: LeadRow) {
       main: `${lead.nextEmailName} · ${dayLabel(lead.nextEmailSendAt)}`,
     };
   }
-  if (lead.stage === "stale") {
+  if (Date.now() - lead.updatedAt.getTime() > coldThresholdDays * DAY_MS) {
     return {
       icon: Flame,
       tone: "text-blush",

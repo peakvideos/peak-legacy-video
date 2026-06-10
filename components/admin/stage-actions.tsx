@@ -2,50 +2,45 @@
 
 import { useTransition } from "react";
 import { setLeadStage } from "@/app/admin/actions";
-import type { LeadStage } from "@/lib/admin/stages";
-import {
-  STAGE_BUTTON_STYLE,
-  STAGE_LABELS,
-  STAGE_ORDER,
-} from "@/lib/admin/stages";
+import { stagePalette, type StageRow } from "@/lib/admin/stages";
 import { cn } from "@/lib/utils";
-
-export { STAGE_LABELS };
 
 export function StageActions({
   leadId,
-  current,
+  currentStageId,
+  stages,
 }: {
   leadId: string;
-  current: LeadStage;
+  currentStageId: string;
+  stages: StageRow[];
 }) {
   const [pending, startTransition] = useTransition();
 
-  const handleSet = (stage: LeadStage) => {
-    if (stage === current || pending) return;
+  const handleSet = (stageId: string) => {
+    if (stageId === currentStageId || pending) return;
     startTransition(async () => {
-      await setLeadStage(leadId, stage);
+      await setLeadStage(leadId, stageId);
     });
   };
 
   return (
     <div className="flex flex-wrap gap-2">
-      {STAGE_ORDER.map((stage) => {
-        const isActive = stage === current;
-        const style = STAGE_BUTTON_STYLE[stage];
+      {stages.map((stage) => {
+        const isActive = stage.id === currentStageId;
+        const style = stagePalette(stage.color).button;
         return (
           <button
-            key={stage}
+            key={stage.id}
             type="button"
             disabled={pending || isActive}
-            onClick={() => handleSet(stage)}
+            onClick={() => handleSet(stage.id)}
             className={cn(
               "font-heading text-[0.7rem] tracking-[0.08em] uppercase px-3 py-1.5 transition cursor-pointer disabled:cursor-default",
               isActive ? style.active : style.idle,
               pending && "opacity-60",
             )}
           >
-            {STAGE_LABELS[stage]}
+            {stage.name}
           </button>
         );
       })}

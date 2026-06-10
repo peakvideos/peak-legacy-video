@@ -1,6 +1,6 @@
 /**
- * Seeds the 5 default nurture templates and attaches them to the `new`
- * stage as automations. Idempotent: skips templates whose slug already
+ * Seeds the 5 default nurture templates and attaches them to the Entry
+ * Stage as automations. Idempotent: skips templates whose slug already
  * exists, and skips automations whose (stage, template) pair is taken.
  *
  * Run: `pnpm db:seed:templates`
@@ -8,7 +8,7 @@
 
 import { eq } from "drizzle-orm";
 import { db } from "../lib/db";
-import { emailTemplates, stageAutomations } from "../lib/db/schema";
+import { emailTemplates, settings, stageAutomations } from "../lib/db/schema";
 
 type Doc = {
   type: "doc";
@@ -147,6 +147,11 @@ async function main() {
     );
   }
 
+  const [{ entryStageId }] = await db
+    .select({ entryStageId: settings.entryStageId })
+    .from(settings)
+    .limit(1);
+
   let templatesCreated = 0;
   let automationsCreated = 0;
 
@@ -184,13 +189,13 @@ async function main() {
 
     if (!existingAutomation) {
       await db.insert(stageAutomations).values({
-        stage: "new",
+        stageId: entryStageId,
         templateId,
         delayMinutes: tpl.delayMinutes,
         position: tpl.position,
       });
       automationsCreated++;
-      console.log(`     ✅ attached to new stage at position ${tpl.position}`);
+      console.log(`     ✅ attached to the Entry Stage at position ${tpl.position}`);
     } else {
       console.log(`     — automation already exists for ${tpl.slug}`);
     }

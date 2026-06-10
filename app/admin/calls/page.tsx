@@ -47,7 +47,7 @@ export default async function CallsPage({
       lastName: r.lead.lastName,
       email: r.lead.email,
       packageInterest: r.lead.packageInterest,
-      stage: r.lead.stage,
+      stageId: r.lead.stageId,
       createdAt: r.lead.createdAt,
       updatedAt: r.lead.updatedAt,
       notes: r.lead.notes,

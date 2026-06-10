@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { db } from "@/lib/db";
 import { bookings, leads } from "@/lib/db/schema";
+import { getSettings, updateSettings } from "@/lib/stages/settings";
 import { POST as submitBooking } from "@/app/api/book/route";
 import { POST as submitInquiry } from "@/app/api/lead/route";
 import { smtp } from "./stubs/nodemailer";
@@ -11,6 +12,7 @@ import {
   createTemplate,
   jobsForLead,
   jsonRequest,
+  stageByName,
 } from "./helpers/fixtures";
 
 /** A weekday roughly a week out — always bookable per the route's rules. */
@@ -35,9 +37,10 @@ function booking(overrides: Record<string, unknown> = {}) {
   });
 }
 
-test("a first-time visitor who books lands in booked_a_call with a scheduled booking, automations, and both confirmation emails", async () => {
+test("a first-time visitor who books lands in the Booking Stage with a scheduled booking, automations, and both confirmation emails", async () => {
+  const { bookingStageId } = await getSettings();
   const confirmation = await createTemplate();
-  await attachAutomation("booked_a_call", confirmation.id, { delayMinutes: 10 });
+  await attachAutomation(bookingStageId, confirmation.id, { delayMinutes: 10 });
 
   const res = await submitBooking(booking());
 
@@ -47,7 +50,7 @@ test("a first-time visitor who books lands in booked_a_call with a scheduled boo
 
   const [lead] = await db.select().from(leads);
   expect(lead.id).toBe(payload.leadId);
-  expect(lead.stage).toBe("booked_a_call");
+  expect(lead.stageId).toBe(bookingStageId);
 
   const allBookings = await db.select().from(bookings);
   expect(allBookings).toHaveLength(1);
@@ -74,11 +77,12 @@ test("a first-time visitor who books lands in booked_a_call with a scheduled boo
   ]);
 });
 
-test("booking promotes a lead from new to booked_a_call and swaps the queued drip for the booked automations", async () => {
+test("booking promotes a lead from the Entry Stage to the Booking Stage and swaps the queued drip for the booked automations", async () => {
+  const { entryStageId, bookingStageId } = await getSettings();
   const nurture = await createTemplate();
   const callPrep = await createTemplate();
-  await attachAutomation("new", nurture.id, { delayMinutes: 60 });
-  await attachAutomation("booked_a_call", callPrep.id, { delayMinutes: 10 });
+  await attachAutomation(entryStageId, nurture.id, { delayMinutes: 60 });
+  await attachAutomation(bookingStageId, callPrep.id, { delayMinutes: 10 });
 
   await submitInquiry(
     jsonRequest("/api/lead", {
@@ -89,14 +93,14 @@ test("booking promotes a lead from new to booked_a_call and swaps the queued dri
     }),
   );
   const [lead] = await db.select().from(leads);
-  expect(lead.stage).toBe("new");
+  expect(lead.stageId).toBe(entryStageId);
 
   const res = await submitBooking(booking());
   expect(res.status).toBe(200);
 
   const [promoted] = await db.select().from(leads);
   expect(promoted.id).toBe(lead.id);
-  expect(promoted.stage).toBe("booked_a_call");
+  expect(promoted.stageId).toBe(bookingStageId);
 
   const jobs = await jobsForLead(lead.id);
   expect(jobs.map((j) => [j.templateId, j.status]).sort()).toEqual(
@@ -108,12 +112,13 @@ test("booking promotes a lead from new to booked_a_call and swaps the queued dri
 });
 
 test("booking again from further down the funnel never demotes the lead and leaves their queue alone", async () => {
+  const callCompleted = await stageByName("Call completed");
   const shootPrep = await createTemplate();
   const lead = await createLead({
     email: "rosie@example.com",
-    stage: "call_completed",
+    stageId: callCompleted.id,
   });
-  await attachAutomation("call_completed", shootPrep.id);
+  await attachAutomation(callCompleted.id, shootPrep.id);
   const existing = await createEmailJob(lead.id, shootPrep.id, {
     sendAt: new Date(Date.now() + 3_600_000),
   });
@@ -122,7 +127,7 @@ test("booking again from further down the funnel never demotes the lead and leav
   expect(res.status).toBe(200);
 
   const [after] = await db.select().from(leads);
-  expect(after.stage).toBe("call_completed");
+  expect(after.stageId).toBe(callCompleted.id);
 
   const jobs = await jobsForLead(lead.id);
   expect(jobs).toHaveLength(1);
@@ -144,4 +149,63 @@ test("a slot that was just taken returns 409 and records nothing for the second 
   const allLeads = await db.select().from(leads);
   expect(allLeads).toHaveLength(1);
   expect(allLeads[0].email).toBe("rosie@example.com");
+});
+
+test("booking promotes forward from any stage positioned before the Booking Stage", async () => {
+  const { bookingStageId } = await getSettings();
+  const stale = await stageByName("Stale");
+  await createLead({ email: "rosie@example.com", stageId: stale.id });
+
+  const res = await submitBooking(booking());
+  expect(res.status).toBe(200);
+
+  const [after] = await db.select().from(leads);
+  expect(after.stageId).toBe(bookingStageId);
+});
+
+test("a lead already at the Booking Stage stays there and their booking automation is re-anchored to the new booking", async () => {
+  const { bookingStageId } = await getSettings();
+  const confirmation = await createTemplate();
+  await attachAutomation(bookingStageId, confirmation.id, { delayMinutes: 10 });
+  const lead = await createLead({
+    email: "rosie@example.com",
+    stageId: bookingStageId,
+  });
+  const stalePending = await createEmailJob(lead.id, confirmation.id, {
+    sendAt: new Date(Date.now() - 3_600_000),
+  });
+
+  const res = await submitBooking(booking());
+  expect(res.status).toBe(200);
+
+  const [after] = await db.select().from(leads);
+  expect(after.stageId).toBe(bookingStageId);
+
+  // The old queued copy is cancelled and a fresh one is anchored to now.
+  const jobs = await jobsForLead(lead.id);
+  expect(jobs.map((j) => [j.templateId, j.status]).sort()).toEqual(
+    [
+      [confirmation.id, "cancelled"],
+      [confirmation.id, "pending"],
+    ].sort(),
+  );
+  const pending = jobs.find((j) => j.status === "pending");
+  expect(pending!.id).not.toBe(stalePending.id);
+  expect(pending!.sendAt.getTime()).toBeGreaterThan(Date.now());
+});
+
+test("booking promotion binds to the Booking Stage setting: re-pointing it changes where booking moves leads", async () => {
+  const callCompleted = await stageByName("Call completed");
+  await updateSettings({ bookingStageId: callCompleted.id });
+
+  // The seeded "Booked a call" stage now sits before the Booking Stage, so
+  // a lead parked there is promoted forward on booking.
+  const booked = await stageByName("Booked a call");
+  await createLead({ email: "rosie@example.com", stageId: booked.id });
+
+  const res = await submitBooking(booking());
+  expect(res.status).toBe(200);
+
+  const [after] = await db.select().from(leads);
+  expect(after.stageId).toBe(callCompleted.id);
 });

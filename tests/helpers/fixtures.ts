@@ -5,8 +5,9 @@ import {
   emailTemplates,
   leads,
   stageAutomations,
+  stages,
 } from "@/lib/db/schema";
-import type { LeadStage } from "@/lib/email/sequence";
+import { getSettings } from "@/lib/stages/settings";
 
 /** Minimal Tiptap document: one paragraph per string. */
 export function tiptapDoc(...paragraphs: string[]) {
@@ -38,14 +39,25 @@ export async function createTemplate(
   return row;
 }
 
+/** Looks up a seeded stage by name — test setup only; app code binds by id. */
+export async function stageByName(name: string) {
+  const [row] = await db
+    .select()
+    .from(stages)
+    .where(eq(stages.name, name))
+    .limit(1);
+  if (!row) throw new Error(`No stage named "${name}"`);
+  return row;
+}
+
 export async function attachAutomation(
-  stage: LeadStage,
+  stageId: string,
   templateId: string,
   overrides: Partial<typeof stageAutomations.$inferInsert> = {},
 ) {
   const [row] = await db
     .insert(stageAutomations)
-    .values({ stage, templateId, ...overrides })
+    .values({ stageId, templateId, ...overrides })
     .returning();
   return row;
 }
@@ -54,6 +66,8 @@ export async function createLead(
   overrides: Partial<typeof leads.$inferInsert> = {},
 ) {
   seq += 1;
+  const stageId =
+    overrides.stageId ?? (await getSettings()).entryStageId;
   const [row] = await db
     .insert(leads)
     .values({
@@ -61,6 +75,7 @@ export async function createLead(
       lastName: "Larsen",
       email: `lead-${seq}@example.com`,
       ...overrides,
+      stageId,
     })
     .returning();
   return row;

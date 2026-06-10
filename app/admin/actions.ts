@@ -5,11 +5,8 @@ import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { emailJobs, emailTemplates, leads } from "@/lib/db/schema";
-import {
-  transitionLeadStageAutomations,
-  type LeadStage,
-} from "@/lib/email/sequence";
+import { emailJobs, emailTemplates, leads, stages } from "@/lib/db/schema";
+import { transitionLeadStageAutomations } from "@/lib/email/sequence";
 import { sendStoredTemplateEmail } from "@/lib/email";
 import { unsubscribeUrlFor } from "@/lib/email/unsubscribe";
 import { isNull } from "drizzle-orm";
@@ -22,12 +19,21 @@ async function requireSession() {
   return session;
 }
 
-export async function setLeadStage(leadId: string, stage: LeadStage) {
+export async function setLeadStage(leadId: string, stageId: string) {
   await requireSession();
 
   await db.transaction(async (tx) => {
+    const [target] = await tx
+      .select({ id: stages.id })
+      .from(stages)
+      .where(eq(stages.id, stageId))
+      .limit(1);
+    if (!target) {
+      throw new Error("Unknown stage");
+    }
+
     const [current] = await tx
-      .select({ stage: leads.stage })
+      .select({ stageId: leads.stageId })
       .from(leads)
       .where(eq(leads.id, leadId))
       .limit(1);
@@ -37,15 +43,15 @@ export async function setLeadStage(leadId: string, stage: LeadStage) {
 
     await tx
       .update(leads)
-      .set({ stage, updatedAt: new Date() })
+      .set({ stageId, updatedAt: new Date() })
       .where(eq(leads.id, leadId));
 
-    if (current.stage === stage) {
+    if (current.stageId === stageId) {
       // No-op transition — leave queued jobs alone.
       return;
     }
 
-    await transitionLeadStageAutomations(leadId, stage, { tx });
+    await transitionLeadStageAutomations(leadId, stageId, { tx });
   });
 
   revalidatePath(`/admin/leads/${leadId}`);

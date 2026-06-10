@@ -32,7 +32,7 @@ async function processBatch() {
       lastName: leads.lastName,
       email: leads.email,
       packageInterest: leads.packageInterest,
-      stage: leads.stage,
+      stageId: leads.stageId,
       unsubscribedAt: leads.unsubscribedAt,
       templateSubject: emailTemplates.subject,
       templateBody: emailTemplates.body,
@@ -65,7 +65,7 @@ async function processBatch() {
     // longer has this template attached as an automation, cancel the job.
     // This keeps in-flight queues consistent with the latest config.
     const stillRelevant = await isJobStillRelevant({
-      stage: job.stage,
+      stageId: job.stageId,
       templateId: job.templateId,
       templateArchived: job.templateArchivedAt != null,
     });
@@ -146,7 +146,7 @@ async function processBatch() {
 }
 
 async function isJobStillRelevant(args: {
-  stage: typeof leads.$inferSelect.stage;
+  stageId: string;
   templateId: string;
   templateArchived: boolean;
 }): Promise<boolean> {
@@ -156,7 +156,7 @@ async function isJobStillRelevant(args: {
     .from(stageAutomations)
     .where(
       and(
-        eq(stageAutomations.stage, args.stage),
+        eq(stageAutomations.stageId, args.stageId),
         eq(stageAutomations.templateId, args.templateId),
       ),
     )

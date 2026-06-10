@@ -1,8 +1,8 @@
 import "server-only";
-import { asc, desc, eq, ne, and } from "drizzle-orm";
+import { asc, desc, eq, inArray, lt, notInArray, or, and } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { bookings, emailJobs, emailTemplates, leads } from "@/lib/db/schema";
-import type { LeadStage } from "@/lib/admin/stages";
+import { bookings, emailJobs, emailTemplates, leads, stages } from "@/lib/db/schema";
+import { getSettings } from "@/lib/stages/settings";
 import type { PackageInterest } from "@/components/admin/shared";
 
 export type LeadRow = {
@@ -11,7 +11,7 @@ export type LeadRow = {
   lastName: string;
   email: string;
   packageInterest: PackageInterest;
-  stage: LeadStage;
+  stageId: string;
   createdAt: Date;
   updatedAt: Date;
   notes: string | null;
@@ -21,12 +21,22 @@ export type LeadRow = {
   nextEmailSendAt: Date | null;
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Subquery: ids of terminal stages (Won or Lost flag). */
+function terminalStageIds() {
+  return db
+    .select({ id: stages.id })
+    .from(stages)
+    .where(or(eq(stages.isWon, true), eq(stages.isLost, true)));
+}
+
 export async function loadActiveLeadRows(): Promise<LeadRow[]> {
   const [allLeads, scheduledBookings, pendingJobs] = await Promise.all([
     db
       .select()
       .from(leads)
-      .where(and(ne(leads.stage, "closed"), ne(leads.stage, "lost")))
+      .where(notInArray(leads.stageId, terminalStageIds()))
       .orderBy(desc(leads.updatedAt)),
     db
       .select()
@@ -70,7 +80,7 @@ export async function loadActiveLeadRows(): Promise<LeadRow[]> {
       lastName: l.lastName,
       email: l.email,
       packageInterest: l.packageInterest,
-      stage: l.stage,
+      stageId: l.stageId,
       createdAt: l.createdAt,
       updatedAt: l.updatedAt,
       notes: l.notes,
@@ -82,13 +92,20 @@ export async function loadActiveLeadRows(): Promise<LeadRow[]> {
   });
 }
 
+/** Leads sitting in any stage carrying the given terminal flag. */
 export async function loadClosedLeadRows(
-  stage: "closed" | "lost",
+  kind: "won" | "lost",
 ): Promise<LeadRow[]> {
+  const flag = kind === "won" ? stages.isWon : stages.isLost;
   const rows = await db
     .select()
     .from(leads)
-    .where(eq(leads.stage, stage))
+    .where(
+      inArray(
+        leads.stageId,
+        db.select({ id: stages.id }).from(stages).where(eq(flag, true)),
+      ),
+    )
     .orderBy(desc(leads.updatedAt));
 
   return rows.map((l) => ({
@@ -97,7 +114,43 @@ export async function loadClosedLeadRows(
     lastName: l.lastName,
     email: l.email,
     packageInterest: l.packageInterest,
-    stage: l.stage,
+    stageId: l.stageId,
+    createdAt: l.createdAt,
+    updatedAt: l.updatedAt,
+    notes: l.notes,
+    phone: l.phone,
+    upcomingBookingAt: null,
+    nextEmailName: null,
+    nextEmailSendAt: null,
+  }));
+}
+
+/**
+ * Non-terminal leads untouched for longer than the cold threshold — the
+ * Stuck view.
+ */
+export async function loadStuckLeadRows(): Promise<LeadRow[]> {
+  const { coldThresholdDays } = await getSettings();
+  const cutoff = new Date(Date.now() - coldThresholdDays * DAY_MS);
+
+  const rows = await db
+    .select()
+    .from(leads)
+    .where(
+      and(
+        notInArray(leads.stageId, terminalStageIds()),
+        lt(leads.updatedAt, cutoff),
+      ),
+    )
+    .orderBy(desc(leads.updatedAt));
+
+  return rows.map((l) => ({
+    id: l.id,
+    firstName: l.firstName,
+    lastName: l.lastName,
+    email: l.email,
+    packageInterest: l.packageInterest,
+    stageId: l.stageId,
     createdAt: l.createdAt,
     updatedAt: l.updatedAt,
     notes: l.notes,

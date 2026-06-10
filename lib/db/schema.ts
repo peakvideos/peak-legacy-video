@@ -1,6 +1,7 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   jsonb,
@@ -20,17 +21,6 @@ export const packageInterest = pgEnum("package_interest", [
   "unsure",
 ]);
 
-export const leadStage = pgEnum("lead_stage", [
-  "new",
-  "stale",
-  "booked_a_call",
-  "call_completed",
-  "video_shoot_scheduled",
-  "post_video_shoot",
-  "closed",
-  "lost",
-]);
-
 export const bookingStatus = pgEnum("booking_status", [
   "scheduled",
   "cancelled",
@@ -45,6 +35,59 @@ export const emailJobStatus = pgEnum("email_job_status", [
 ]);
 
 // ── Application tables ────────────────────────────────────────────
+
+/**
+ * Pipeline stages as data. System behavior never binds to a stage's name —
+ * only to the behavior flags below and to the `settings` pointers. `color`
+ * is a palette key resolved by the admin UI; `description` is the
+ * empty-column hint on the board (null for owner-created stages).
+ */
+export const stages = pgTable(
+  "stages",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+    color: text().notNull(),
+    description: text(),
+    position: integer().notNull(),
+    isWon: boolean().notNull().default(false),
+    isLost: boolean().notNull().default(false),
+    needsAction: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("stages_position_idx").on(t.position)],
+);
+
+/**
+ * Single-row settings store (enforced by the id = 1 check). Holds the
+ * stage pointers and knobs that system behavior binds to instead of stage
+ * names: where inquiries land, where booking promotes to, when a lead
+ * counts as cold, and the global send pause.
+ */
+export const settings = pgTable(
+  "settings",
+  {
+    id: integer().primaryKey().default(1),
+    entryStageId: uuid()
+      .notNull()
+      .references(() => stages.id, { onDelete: "restrict" }),
+    bookingStageId: uuid()
+      .notNull()
+      .references(() => stages.id, { onDelete: "restrict" }),
+    coldThresholdDays: integer().notNull().default(14),
+    paused: boolean().notNull().default(false),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp({ withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [check("settings_single_row", sql`${t.id} = 1`)],
+);
 
 export const leads = pgTable(
   "leads",
@@ -62,7 +105,9 @@ export const leads = pgTable(
     utmCampaign: text(),
     utmContent: text(),
     utmTerm: text(),
-    stage: leadStage().notNull().default("new"),
+    stageId: uuid()
+      .notNull()
+      .references(() => stages.id, { onDelete: "restrict" }),
     crmNotes: text(),
     unsubscribedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -73,7 +118,7 @@ export const leads = pgTable(
   },
   (t) => [
     index("leads_created_at_idx").on(t.createdAt),
-    index("leads_stage_idx").on(t.stage),
+    index("leads_stage_id_idx").on(t.stageId),
   ],
 );
 
@@ -121,7 +166,9 @@ export const stageAutomations = pgTable(
   "stage_automations",
   {
     id: uuid().primaryKey().defaultRandom(),
-    stage: leadStage().notNull(),
+    stageId: uuid()
+      .notNull()
+      .references(() => stages.id, { onDelete: "cascade" }),
     templateId: uuid()
       .notNull()
       .references(() => emailTemplates.id, { onDelete: "restrict" }),
@@ -134,8 +181,8 @@ export const stageAutomations = pgTable(
       .$onUpdate(() => new Date()),
   },
   (t) => [
-    index("stage_automations_stage_idx").on(t.stage, t.position),
-    uniqueIndex("stage_automations_stage_template_uniq").on(t.stage, t.templateId),
+    index("stage_automations_stage_id_idx").on(t.stageId, t.position),
+    uniqueIndex("stage_automations_stage_template_uniq").on(t.stageId, t.templateId),
   ],
 );
 
@@ -251,7 +298,13 @@ export const verifications = pgTable(
 
 // ── Relations ─────────────────────────────────────────────────────
 
-export const leadsRelations = relations(leads, ({ many }) => ({
+export const stagesRelations = relations(stages, ({ many }) => ({
+  leads: many(leads),
+  stageAutomations: many(stageAutomations),
+}));
+
+export const leadsRelations = relations(leads, ({ one, many }) => ({
+  stage: one(stages, { fields: [leads.stageId], references: [stages.id] }),
   bookings: many(bookings),
   emailJobs: many(emailJobs),
 }));
@@ -268,6 +321,10 @@ export const emailTemplatesRelations = relations(emailTemplates, ({ many }) => (
 export const stageAutomationsRelations = relations(
   stageAutomations,
   ({ one }) => ({
+    stage: one(stages, {
+      fields: [stageAutomations.stageId],
+      references: [stages.id],
+    }),
     template: one(emailTemplates, {
       fields: [stageAutomations.templateId],
       references: [emailTemplates.id],

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { expect, test } from "vitest";
 import { db } from "@/lib/db";
 import { emailJobs, leads } from "@/lib/db/schema";
+import { getSettings, updateSettings } from "@/lib/stages/settings";
 import { POST as submitInquiry } from "@/app/api/lead/route";
 import {
   attachAutomation,
@@ -9,6 +10,7 @@ import {
   createTemplate,
   jobsForLead,
   jsonRequest,
+  stageByName,
 } from "./helpers/fixtures";
 
 const MINUTE = 60_000;
@@ -23,11 +25,15 @@ function inquiry(overrides: Record<string, unknown> = {}) {
   });
 }
 
-test("a new inquiry lands in the new stage and enqueues that stage's automations", async () => {
+test("a new inquiry lands in the Entry Stage and enqueues that stage's automations", async () => {
+  const { entryStageId } = await getSettings();
   const welcome = await createTemplate();
   const followUp = await createTemplate();
-  await attachAutomation("new", welcome.id, { delayMinutes: 5, position: 0 });
-  await attachAutomation("new", followUp.id, {
+  await attachAutomation(entryStageId, welcome.id, {
+    delayMinutes: 5,
+    position: 0,
+  });
+  await attachAutomation(entryStageId, followUp.id, {
     delayMinutes: 60 * 24,
     position: 1,
   });
@@ -43,7 +49,7 @@ test("a new inquiry lands in the new stage and enqueues that stage's automations
   expect(allLeads).toHaveLength(1);
   const lead = allLeads[0];
   expect(lead.id).toBe(payload.leadId);
-  expect(lead.stage).toBe("new");
+  expect(lead.stageId).toBe(entryStageId);
   expect(lead.email).toBe("rosie@example.com"); // stored lowercased
 
   const jobs = await jobsForLead(lead.id);
@@ -61,11 +67,13 @@ test("a new inquiry lands in the new stage and enqueues that stage's automations
 });
 
 test("re-submitting while further along the funnel updates contact details but never moves the lead back or re-enqueues", async () => {
+  const { entryStageId } = await getSettings();
+  const booked = await stageByName("Booked a call");
   const welcome = await createTemplate();
-  await attachAutomation("new", welcome.id);
+  await attachAutomation(entryStageId, welcome.id);
   const lead = await createLead({
     email: "rosie@example.com",
-    stage: "booked_a_call",
+    stageId: booked.id,
     phone: null,
   });
 
@@ -77,16 +85,17 @@ test("re-submitting while further along the funnel updates contact details but n
   expect((await res.json()).leadId).toBe(lead.id);
 
   const [updated] = await db.select().from(leads);
-  expect(updated.stage).toBe("booked_a_call");
+  expect(updated.stageId).toBe(booked.id);
   expect(updated.phone).toBe("555-0101");
   expect(updated.notes).toBe("Checking in again");
 
   expect(await jobsForLead(lead.id)).toHaveLength(0);
 });
 
-test("re-submitting while still in the new stage does not duplicate queued or already-sent emails", async () => {
+test("re-submitting while still in the Entry Stage does not duplicate queued or already-sent emails", async () => {
+  const { entryStageId } = await getSettings();
   const welcome = await createTemplate();
-  await attachAutomation("new", welcome.id, { delayMinutes: 5 });
+  await attachAutomation(entryStageId, welcome.id, { delayMinutes: 5 });
 
   await submitInquiry(inquiry());
   const [first] = await db.select().from(leads);
@@ -109,16 +118,21 @@ test("re-submitting while still in the new stage does not duplicate queued or al
   expect(finalJobs[0].status).toBe("sent");
 });
 
-test("re-submitting while parked in stale keeps the lead in stale with nothing enqueued", async () => {
+test("re-submitting while parked outside the Entry Stage keeps the lead there with nothing enqueued", async () => {
+  const { entryStageId } = await getSettings();
+  const stale = await stageByName("Stale");
   const welcome = await createTemplate();
-  await attachAutomation("new", welcome.id);
-  const lead = await createLead({ email: "rosie@example.com", stage: "stale" });
+  await attachAutomation(entryStageId, welcome.id);
+  const lead = await createLead({
+    email: "rosie@example.com",
+    stageId: stale.id,
+  });
 
   const res = await submitInquiry(inquiry());
 
   expect(res.status).toBe(200);
   const [updated] = await db.select().from(leads);
-  expect(updated.stage).toBe("stale");
+  expect(updated.stageId).toBe(stale.id);
   expect(await jobsForLead(lead.id)).toHaveLength(0);
 });
 
@@ -138,4 +152,22 @@ test("UTM attribution is first-touch: blank re-submissions keep the original val
   [lead] = await db.select().from(leads);
   expect(lead.utmSource).toBe("facebook");
   expect(lead.utmCampaign).toBe("spring");
+});
+
+test("inquiry capture binds to the Entry Stage setting: re-pointing it moves where inquiries land and which automations run", async () => {
+  // Point the Entry Stage at a different stage than the seeded default.
+  const parked = await stageByName("Video shoot scheduled");
+  await updateSettings({ entryStageId: parked.id });
+
+  const welcome = await createTemplate();
+  await attachAutomation(parked.id, welcome.id, { delayMinutes: 5 });
+
+  const res = await submitInquiry(inquiry());
+  expect(res.status).toBe(200);
+
+  const [lead] = await db.select().from(leads);
+  expect(lead.stageId).toBe(parked.id);
+
+  const jobs = await jobsForLead(lead.id);
+  expect(jobs.map((j) => j.templateId)).toEqual([welcome.id]);
 });

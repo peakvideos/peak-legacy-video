@@ -1,15 +1,25 @@
 import "server-only";
-import { and, eq, gte, lt, ne, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, notInArray, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { bookings, leads } from "@/lib/db/schema";
+import { bookings, leads, stages } from "@/lib/db/schema";
+import { getSettings } from "@/lib/stages/settings";
 import type { AdminSidebarCounts } from "@/components/admin/admin-sidebar";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Subquery: ids of terminal stages (Won or Lost flag). */
+function terminalStageIds() {
+  return db
+    .select({ id: stages.id })
+    .from(stages)
+    .where(or(eq(stages.isWon, true), eq(stages.isLost, true)));
+}
+
 export async function loadSidebarCounts(): Promise<AdminSidebarCounts> {
+  const { coldThresholdDays } = await getSettings();
   const now = new Date();
   const weekFromNow = new Date(now.getTime() + 7 * DAY_MS);
-  const fourteenDaysAgo = new Date(now.getTime() - 14 * DAY_MS);
+  const coldCutoff = new Date(now.getTime() - coldThresholdDays * DAY_MS);
 
   const [
     [{ value: inboxCount }],
@@ -34,19 +44,26 @@ export async function loadSidebarCounts(): Promise<AdminSidebarCounts> {
       .from(leads)
       .where(
         and(
-          ne(leads.stage, "closed"),
-          ne(leads.stage, "lost"),
-          lt(leads.updatedAt, fourteenDaysAgo),
+          notInArray(leads.stageId, terminalStageIds()),
+          lt(leads.updatedAt, coldCutoff),
         ),
       ),
     db
       .select({ value: sql<number>`count(*)::int` })
       .from(leads)
-      .where(and(ne(leads.stage, "closed"), ne(leads.stage, "lost"))),
+      .where(notInArray(leads.stageId, terminalStageIds())),
     db
       .select({ value: sql<number>`count(*)::int` })
       .from(leads)
-      .where(eq(leads.stage, "closed")),
+      .where(
+        inArray(
+          leads.stageId,
+          db
+            .select({ id: stages.id })
+            .from(stages)
+            .where(eq(stages.isWon, true)),
+        ),
+      ),
   ]);
 
   return {
