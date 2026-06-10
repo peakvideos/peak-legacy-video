@@ -1,18 +1,11 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { stageAutomations, stages } from "@/lib/db/schema";
 import { reconcileAutomationsForStage } from "@/lib/email/sequence";
-
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) throw new Error("Unauthorized");
-  return session;
-}
 
 /** Resolves the stage id or throws — actions never write to a ghost stage. */
 async function ensureStage(stageId: string): Promise<string> {

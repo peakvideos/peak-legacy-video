@@ -115,6 +115,9 @@ export function stagePalette(color: string): StagePalette {
   return PALETTES[color] ?? FALLBACK_PALETTE;
 }
 
+/** The palette keys the stage editor offers as swatches. */
+export const STAGE_COLORS = Object.keys(PALETTES);
+
 /**
  * The board's two views. "Settled" is the trailing run of flagged stages
  * (Won, Lost, or Needs-action) at the end of the pipeline — the

@@ -1,23 +1,14 @@
 "use server";
 
-import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { emailJobs, emailTemplates, leads, stages } from "@/lib/db/schema";
 import { transitionLeadStageAutomations } from "@/lib/email/sequence";
 import { sendStoredTemplateEmail } from "@/lib/email";
 import { unsubscribeUrlFor } from "@/lib/email/unsubscribe";
 import { isNull } from "drizzle-orm";
-
-async function requireSession() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
-    throw new Error("Unauthorized");
-  }
-  return session;
-}
 
 export async function setLeadStage(leadId: string, stageId: string) {
   await requireSession();
