@@ -13,8 +13,10 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { toast } from "sonner";
 import { setLeadStage } from "@/app/admin/actions";
 import { KanbanCard, type KanbanLeadRow } from "./kanban-card";
+import { showStageMoveToast } from "./move-toast";
 import { AddStageButton, EditStageButton } from "./stage-editor";
 import {
   splitBoardViews,
@@ -137,14 +139,22 @@ export function KanbanBoard({
     if (!overId) return;
 
     const targetStageId = String(overId);
-    if (!stageById.has(targetStageId)) return;
+    const targetStage = stageById.get(targetStageId);
+    if (!targetStage) return;
 
     const lead = optimistic.find((l) => l.id === leadId);
     if (!lead || lead.stageId === targetStageId) return;
 
     startTransition(async () => {
       applyOptimistic({ id: leadId, stageId: targetStageId });
-      await setLeadStage(leadId, targetStageId);
+      try {
+        const move = await setLeadStage(leadId, targetStageId);
+        showStageMoveToast({ leadId, stageName: targetStage.name, move });
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Couldn't move the lead.",
+        );
+      }
     });
   };
 

@@ -1,7 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
+import { toast } from "sonner";
 import { setLeadStage } from "@/app/admin/actions";
+import { showStageMoveToast } from "./move-toast";
 import { stagePalette, type StageRow } from "@/lib/admin/stages";
 import { cn } from "@/lib/utils";
 
@@ -18,8 +20,17 @@ export function StageActions({
 
   const handleSet = (stageId: string) => {
     if (stageId === currentStageId || pending) return;
+    const target = stages.find((s) => s.id === stageId);
+    if (!target) return;
     startTransition(async () => {
-      await setLeadStage(leadId, stageId);
+      try {
+        const move = await setLeadStage(leadId, stageId);
+        showStageMoveToast({ leadId, stageName: target.name, move });
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Couldn't move the lead.",
+        );
+      }
     });
   };
 
