@@ -2,7 +2,8 @@ import "server-only";
 import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bookings, emailJobs, emailTemplates, leads } from "@/lib/db/schema";
-import type { LeadStage } from "@/lib/admin/stages";
+import { listStages } from "@/lib/stages";
+import { getSettings } from "@/lib/stages/settings";
 import type { PackageInterest } from "@/components/admin/shared";
 
 export type EventKind =
@@ -14,7 +15,6 @@ export type EventKind =
   | "pending";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const STALE_DAYS = 14;
 const SENT_LOOKBACK_DAYS = 30;
 
 export type InboxEvent = {
@@ -29,22 +29,16 @@ export type InboxEvent = {
   leadLastName: string;
   leadEmail: string;
   leadPackage: PackageInterest;
-  leadStage: LeadStage;
   title: string;
   preview: string;
 };
 
-/**
- * Owner-action stages — when a lead is sitting in one of these, the design
- * surfaces "waiting on you" because no automation will move things forward
- * without a human nudge.
- */
-const WAITING_STAGES: LeadStage[] = ["call_completed", "post_video_shoot"];
-
 export async function loadInboxEvents(): Promise<InboxEvent[]> {
   const sentLookback = new Date(Date.now() - SENT_LOOKBACK_DAYS * DAY_MS);
 
-  const [allLeads, scheduledBookings, recentJobs] = await Promise.all([
+  const [{ coldThresholdDays }, allStages, allLeads, scheduledBookings, recentJobs] = await Promise.all([
+    getSettings(),
+    listStages(),
     db.select().from(leads).orderBy(desc(leads.createdAt)),
     db
       .select()
@@ -71,6 +65,7 @@ export async function loadInboxEvents(): Promise<InboxEvent[]> {
       .where(gte(emailJobs.updatedAt, sentLookback)),
   ]);
 
+  const stageById = new Map(allStages.map((s) => [s.id, s]));
   const leadById = new Map(allLeads.map((l) => [l.id, l]));
   const upcomingByLead = new Map<string, (typeof scheduledBookings)[number]>();
   for (const b of scheduledBookings) {
@@ -80,6 +75,7 @@ export async function loadInboxEvents(): Promise<InboxEvent[]> {
   const events: InboxEvent[] = [];
 
   for (const l of allLeads) {
+    const stage = stageById.get(l.stageId);
     const base = {
       leadId: l.id,
       leadCreatedAt: l.createdAt,
@@ -88,7 +84,6 @@ export async function loadInboxEvents(): Promise<InboxEvent[]> {
       leadLastName: l.lastName,
       leadEmail: l.email,
       leadPackage: l.packageInterest,
-      leadStage: l.stage,
     };
 
     events.push({
@@ -115,9 +110,9 @@ export async function loadInboxEvents(): Promise<InboxEvent[]> {
     const stuckDays = Math.floor(
       (Date.now() - l.updatedAt.getTime()) / DAY_MS,
     );
-    const isTerminal = l.stage === "closed" || l.stage === "lost";
+    const isTerminal = !!stage && (stage.isWon || stage.isLost);
 
-    if (!isTerminal && WAITING_STAGES.includes(l.stage)) {
+    if (!isTerminal && stage?.needsAction) {
       events.push({
         ...base,
         id: `wait-${l.id}`,
@@ -128,7 +123,7 @@ export async function loadInboxEvents(): Promise<InboxEvent[]> {
       });
     }
 
-    if (!isTerminal && stuckDays >= STALE_DAYS) {
+    if (!isTerminal && stuckDays >= coldThresholdDays) {
       events.push({
         ...base,
         id: `cold-${l.id}`,
@@ -151,7 +146,6 @@ export async function loadInboxEvents(): Promise<InboxEvent[]> {
       leadLastName: lead.lastName,
       leadEmail: lead.email,
       leadPackage: lead.packageInterest,
-      leadStage: lead.stage,
     };
     if (j.status === "sent" && j.sentAt) {
       events.push({
