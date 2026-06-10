@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { emailJobs, emailTemplates, leads, stages } from "@/lib/db/schema";
@@ -10,10 +10,25 @@ import { sendStoredTemplateEmail } from "@/lib/email";
 import { unsubscribeUrlFor } from "@/lib/email/unsubscribe";
 import { isNull } from "drizzle-orm";
 
-export async function setLeadStage(leadId: string, stageId: string) {
+/**
+ * What a stage move did, in the shape the move toast needs: counts for the
+ * summary line plus everything `undoLeadStageMove` needs to reverse it.
+ */
+export type StageMoveResult = {
+  fromStageId: string;
+  cancelled: number;
+  scheduled: number;
+  cancelledJobIds: string[];
+  scheduledJobIds: string[];
+};
+
+export async function setLeadStage(
+  leadId: string,
+  stageId: string,
+): Promise<StageMoveResult> {
   await requireSession();
 
-  await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [target] = await tx
       .select({ id: stages.id })
       .from(stages)
@@ -39,14 +54,78 @@ export async function setLeadStage(leadId: string, stageId: string) {
 
     if (current.stageId === stageId) {
       // No-op transition — leave queued jobs alone.
-      return;
+      return {
+        fromStageId: current.stageId,
+        cancelled: 0,
+        scheduled: 0,
+        cancelledJobIds: [],
+        scheduledJobIds: [],
+      };
     }
 
-    await transitionLeadStageAutomations(leadId, stageId, { tx });
+    const transition = await transitionLeadStageAutomations(leadId, stageId, {
+      tx,
+    });
+    return {
+      fromStageId: current.stageId,
+      cancelled: transition.cancelled,
+      scheduled: transition.enqueued,
+      cancelledJobIds: transition.cancelledJobIds,
+      scheduledJobIds: transition.enqueuedJobIds,
+    };
   });
 
   revalidatePath(`/admin/leads/${leadId}`);
   revalidatePath("/admin");
+  return result;
+}
+
+/**
+ * Reverses a stage move from the toast's Undo: puts the lead back on the
+ * stage it left. Takes the `StageMoveResult` the move returned.
+ */
+export async function undoLeadStageMove(leadId: string, move: StageMoveResult) {
+  await requireSession();
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(leads)
+      .set({ stageId: move.fromStageId, updatedAt: new Date() })
+      .where(eq(leads.id, leadId));
+
+    if (move.cancelledJobIds.length > 0) {
+      // The cancel only flipped status — send_at was never touched, so
+      // flipping back restores the original send times.
+      await tx
+        .update(emailJobs)
+        .set({ status: "pending", updatedAt: new Date() })
+        .where(
+          and(
+            eq(emailJobs.leadId, leadId),
+            inArray(emailJobs.id, move.cancelledJobIds),
+            eq(emailJobs.status, "cancelled"),
+          ),
+        );
+    }
+
+    if (move.scheduledJobIds.length > 0) {
+      // Only still-pending rows: a zero-delay job the worker already
+      // drained is sent history, and history is never rewritten.
+      await tx
+        .delete(emailJobs)
+        .where(
+          and(
+            eq(emailJobs.leadId, leadId),
+            inArray(emailJobs.id, move.scheduledJobIds),
+            eq(emailJobs.status, "pending"),
+          ),
+        );
+    }
+  });
+
+  revalidatePath(`/admin/leads/${leadId}`);
+  revalidatePath("/admin");
+  revalidatePath("/admin/sequences");
 }
 
 export async function setLeadCrmNotes(leadId: string, crmNotes: string) {

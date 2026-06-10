@@ -50,6 +50,26 @@ test("moving a lead cancels the departed stage's pending emails and enqueues the
   );
 });
 
+test("a move reports its previous stage and how many emails it cancelled and scheduled", async () => {
+  const { entryStageId } = await getSettings();
+  const callCompleted = await stageByName("Call completed");
+  const nurture = await createTemplate();
+  const callRecap = await createTemplate();
+  await attachAutomation(entryStageId, nurture.id);
+  await attachAutomation(callCompleted.id, callRecap.id, { delayMinutes: 30 });
+
+  const lead = await createLead();
+  await createEmailJob(lead.id, nurture.id, {
+    sendAt: new Date(Date.now() + 60 * MINUTE),
+  });
+
+  const move = await setLeadStage(lead.id, callCompleted.id);
+
+  expect(move.fromStageId).toBe(entryStageId);
+  expect(move.cancelled).toBe(1);
+  expect(move.scheduled).toBe(1);
+});
+
 test("templates the lead has already received are skipped when entering a stage that automates them", async () => {
   const callCompleted = await stageByName("Call completed");
   const recap = await createTemplate();

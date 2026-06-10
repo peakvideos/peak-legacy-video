@@ -17,7 +17,7 @@ export async function enqueueAutomationsForStage(
   leadId: string,
   stageId: string,
   options: { from?: Date; tx?: Tx } = {},
-): Promise<{ enqueued: number; skipped: number }> {
+): Promise<{ enqueued: number; skipped: number; enqueuedJobIds: string[] }> {
   const runner = options.tx ?? db;
   const from = options.from ?? new Date();
 
@@ -27,7 +27,7 @@ export async function enqueueAutomationsForStage(
     .where(eq(stages.id, stageId))
     .limit(1);
   if (stage?.isWon || stage?.isLost) {
-    return { enqueued: 0, skipped: 0 };
+    return { enqueued: 0, skipped: 0, enqueuedJobIds: [] };
   }
 
   const automations = await runner
@@ -40,7 +40,7 @@ export async function enqueueAutomationsForStage(
     .orderBy(stageAutomations.position);
 
   if (automations.length === 0) {
-    return { enqueued: 0, skipped: 0 };
+    return { enqueued: 0, skipped: 0, enqueuedJobIds: [] };
   }
 
   // Find templates that have already been sent or are currently pending for
@@ -65,13 +65,17 @@ export async function enqueueAutomationsForStage(
     }));
 
   if (rows.length === 0) {
-    return { enqueued: 0, skipped: automations.length };
+    return { enqueued: 0, skipped: automations.length, enqueuedJobIds: [] };
   }
 
-  await runner.insert(emailJobs).values(rows);
+  const inserted = await runner
+    .insert(emailJobs)
+    .values(rows)
+    .returning({ id: emailJobs.id });
   return {
-    enqueued: rows.length,
-    skipped: automations.length - rows.length,
+    enqueued: inserted.length,
+    skipped: automations.length - inserted.length,
+    enqueuedJobIds: inserted.map((r) => r.id),
   };
 }
 
@@ -98,7 +102,13 @@ export async function transitionLeadStageAutomations(
   leadId: string,
   newStageId: string,
   options: { tx?: Tx; from?: Date } = {},
-): Promise<{ enqueued: number; skipped: number; cancelled: number }> {
+): Promise<{
+  enqueued: number;
+  skipped: number;
+  cancelled: number;
+  cancelledJobIds: string[];
+  enqueuedJobIds: string[];
+}> {
   const runner = options.tx ?? db;
 
   const cancelResult = await runner
@@ -117,8 +127,10 @@ export async function transitionLeadStageAutomations(
 
   return {
     cancelled: cancelResult.length,
+    cancelledJobIds: cancelResult.map((r) => r.id),
     enqueued: enqueueResult.enqueued,
     skipped: enqueueResult.skipped,
+    enqueuedJobIds: enqueueResult.enqueuedJobIds,
   };
 }
 
