@@ -84,6 +84,16 @@ export function KanbanBoard({
   const bookingStagePosition =
     stageById.get(settings.bookingStageId)?.position ?? -1;
 
+  // Unfiltered per-stage totals: the delete flow needs the stage's true
+  // resident count even while a search narrows the visible cards.
+  const totalLeadCounts = new Map<string, number>();
+  for (const lead of optimistic) {
+    totalLeadCounts.set(
+      lead.stageId,
+      (totalLeadCounts.get(lead.stageId) ?? 0) + 1,
+    );
+  }
+
   const grouped = new Map<string, KanbanLeadRow[]>(
     ordered.map((s) => [s.id, []]),
   );
@@ -158,6 +168,7 @@ export function KanbanBoard({
             stage={stage}
             allStages={ordered}
             leads={grouped.get(stage.id) ?? []}
+            totalLeadCount={totalLeadCounts.get(stage.id) ?? 0}
             settings={settings}
             bookingStagePosition={bookingStagePosition}
             interactive={mounted}
@@ -262,6 +273,7 @@ function KanbanColumn({
   stage,
   allStages,
   leads,
+  totalLeadCount,
   settings,
   bookingStagePosition,
   interactive,
@@ -269,6 +281,7 @@ function KanbanColumn({
   stage: StageRow;
   allStages: StageRow[];
   leads: KanbanLeadRow[];
+  totalLeadCount: number;
   settings: StageSettings;
   bookingStagePosition: number;
   interactive: boolean;
@@ -278,6 +291,7 @@ function KanbanColumn({
       stage={stage}
       allStages={allStages}
       leads={leads}
+      totalLeadCount={totalLeadCount}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
     />
@@ -286,6 +300,7 @@ function KanbanColumn({
       stage={stage}
       allStages={allStages}
       leads={leads}
+      totalLeadCount={totalLeadCount}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
       interactive={false}
@@ -297,12 +312,14 @@ function DroppableColumn({
   stage,
   allStages,
   leads,
+  totalLeadCount,
   settings,
   bookingStagePosition,
 }: {
   stage: StageRow;
   allStages: StageRow[];
   leads: KanbanLeadRow[];
+  totalLeadCount: number;
   settings: StageSettings;
   bookingStagePosition: number;
 }) {
@@ -313,6 +330,7 @@ function DroppableColumn({
       stage={stage}
       allStages={allStages}
       leads={leads}
+      totalLeadCount={totalLeadCount}
       settings={settings}
       bookingStagePosition={bookingStagePosition}
       isOver={isOver}
@@ -325,6 +343,7 @@ function ColumnShell({
   stage,
   allStages,
   leads,
+  totalLeadCount,
   settings,
   bookingStagePosition,
   isOver = false,
@@ -334,6 +353,7 @@ function ColumnShell({
   stage: StageRow;
   allStages: StageRow[];
   leads: KanbanLeadRow[];
+  totalLeadCount: number;
   settings: StageSettings;
   bookingStagePosition: number;
   isOver?: boolean;
@@ -357,7 +377,12 @@ function ColumnShell({
           <span className="font-heading text-xs text-(--adm-text-muted)">
             {leads.length}
           </span>
-          <EditStageButton stage={stage} stages={allStages} />
+          <EditStageButton
+            stage={stage}
+            stages={allStages}
+            settings={settings}
+            leadCount={totalLeadCount}
+          />
           <Link
             href={`/admin/stages/${stage.id}`}
             className="text-(--adm-text-muted) hover:text-gold text-base leading-none"
