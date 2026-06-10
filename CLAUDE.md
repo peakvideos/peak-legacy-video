@@ -40,3 +40,17 @@ Define these in Tailwind:
 - Payment processing (owner sends Wave link manually after the discovery call)
 - Lead-facing accounts/login
 - Rescheduling UI (leads reply to email)
+
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in GitHub Issues (peakvideos/peak-legacy-video) via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles use their default names (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
