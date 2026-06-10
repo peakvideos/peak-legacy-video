@@ -11,6 +11,8 @@ export type BookingTemplateInput = {
   dateLabel: string;
   /** "10:00 AM" */
   timeLabel: string;
+  /** Google Meet URL for the call, when the calendar event was created. */
+  meetLink?: string | null;
 };
 
 const ownerName = "The Peak Studios CO Team";
@@ -26,13 +28,16 @@ const baseStyle = `
 
 export function leadConfirmationTemplate(input: BookingTemplateInput) {
   const subject = `You're booked in — Peak Studios CO`;
+  const formatText = input.meetLink
+    ? `Where: Google Meet — ${input.meetLink}\n\nYou'll also find this link in the calendar invite we just sent you.`
+    : `Format: Phone or video call — we'll follow up with details`;
   const text = `Hi ${input.firstName},
 
 You're all set! Here are your booking details:
 
 Date: ${input.dateLabel}
 Time: ${input.timeLabel} Pacific Time
-Format: Phone or video call — we'll follow up with details
+${formatText}
 
 We're looking forward to chatting with you. If you need to reschedule, just reply to this email.
 
@@ -40,12 +45,16 @@ See you soon,
 ${ownerName}
 Peak Studios CO`;
 
+  const formatHtml = input.meetLink
+    ? `<p class="row"><span class="label">Where:</span> Google Meet — <a href="${escapeHtml(input.meetLink)}">${escapeHtml(input.meetLink)}</a></p>
+    <p class="muted">You'll also find this link in the calendar invite we just sent you.</p>`
+    : `<p class="row"><span class="label">Format:</span> Phone or video call — we'll follow up with details</p>`;
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>${baseStyle}</style></head><body><div class="wrap">
     <p>Hi ${escapeHtml(input.firstName)},</p>
     <p>You're all set! Here are your booking details:</p>
     <p class="row"><span class="label">Date:</span> ${escapeHtml(input.dateLabel)}</p>
     <p class="row"><span class="label">Time:</span> ${escapeHtml(input.timeLabel)} Pacific Time</p>
-    <p class="row"><span class="label">Format:</span> Phone or video call — we'll follow up with details</p>
+    ${formatHtml}
     <p>We're looking forward to chatting with you. If you need to reschedule, just reply to this email.</p>
     <p>See you soon,<br/>${escapeHtml(ownerName)}<br/>Peak Studios CO</p>
   </div></body></html>`;
@@ -62,7 +71,7 @@ Email: ${input.email}
 Phone: ${input.phone || "—"}
 Date/Time: ${input.dateLabel} at ${input.timeLabel}
 Package interest: ${input.packageLabel}
-Notes: ${input.notes || "—"}
+Notes: ${input.notes || "—"}${input.meetLink ? `\nGoogle Meet: ${input.meetLink}` : ""}
 
 This has been added to your Google Calendar.`;
 
@@ -74,6 +83,7 @@ This has been added to your Google Calendar.`;
     <p class="row"><span class="label">Date/Time:</span> ${escapeHtml(input.dateLabel)} at ${escapeHtml(input.timeLabel)} PT</p>
     <p class="row"><span class="label">Package interest:</span> ${escapeHtml(input.packageLabel)}</p>
     <p class="row"><span class="label">Notes:</span> ${escapeHtml(input.notes || "—")}</p>
+    ${input.meetLink ? `<p class="row"><span class="label">Google Meet:</span> <a href="${escapeHtml(input.meetLink)}">${escapeHtml(input.meetLink)}</a></p>` : ""}
     <p class="muted">This has been added to your Google Calendar.</p>
   </div></body></html>`;
 

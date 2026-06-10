@@ -222,6 +222,7 @@ export async function POST(req: Request) {
     timeLabel: body.time,
   };
 
+  let meetLink: string | null = null;
   if (isGoogleCalendarConfigured()) {
     try {
       const event = await createBookingEvent({
@@ -239,6 +240,7 @@ export async function POST(req: Request) {
           .join("\n"),
         attendeeEmail: body.email,
       });
+      meetLink = event.meetLink;
       if (event.eventId) {
         await db
           .update(bookings)
@@ -255,10 +257,10 @@ export async function POST(req: Request) {
 
   // Fire-and-log emails. Don't block success on transient email failures.
   await Promise.all([
-    sendBookingLeadConfirmation(tplInput).catch((err) =>
+    sendBookingLeadConfirmation({ ...tplInput, meetLink }).catch((err) =>
       console.error("[book] lead email error", err),
     ),
-    sendBookingOwnerNotification(tplInput).catch((err) =>
+    sendBookingOwnerNotification({ ...tplInput, meetLink }).catch((err) =>
       console.error("[book] owner email error", err),
     ),
   ]);

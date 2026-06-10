@@ -143,6 +143,7 @@ export type CreateBookingEventInput = {
 export type CreatedBookingEvent = {
   eventId: string;
   htmlLink: string | null;
+  meetLink: string | null;
 };
 
 export async function createBookingEvent(
@@ -164,17 +165,34 @@ export async function createBookingEvent(
   const cal = calendarClient();
   const res = await cal.events.insert({
     calendarId: calendarId(),
+    // Required for the API to honor conferenceData.createRequest.
+    conferenceDataVersion: 1,
+    // Email the calendar invite to attendees (defaults to none).
+    sendUpdates: "all",
     requestBody: {
       summary: input.summary,
       description: input.description,
       start: { dateTime: startLocal, timeZone: TIMEZONE },
       end: { dateTime: endLocal, timeZone: TIMEZONE },
       attendees: input.attendeeEmail ? [{ email: input.attendeeEmail }] : undefined,
+      conferenceData: {
+        createRequest: {
+          requestId: crypto.randomUUID(),
+          conferenceSolutionKey: { type: "hangoutsMeet" },
+        },
+      },
     },
   });
+  const meetLink =
+    res.data.hangoutLink ??
+    res.data.conferenceData?.entryPoints?.find(
+      (e) => e.entryPointType === "video",
+    )?.uri ??
+    null;
   return {
     eventId: res.data.id ?? "",
     htmlLink: res.data.htmlLink ?? null,
+    meetLink,
   };
 }
 
