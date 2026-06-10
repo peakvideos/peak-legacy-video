@@ -46,7 +46,13 @@ export async function createStage(args: {
 
 async function updateStageOrThrow(
   stageId: string,
-  patch: { name?: string; color?: string },
+  patch: {
+    name?: string;
+    color?: string;
+    isWon?: boolean;
+    isLost?: boolean;
+    needsAction?: boolean;
+  },
 ) {
   const updated = await db
     .update(stages)
@@ -105,6 +111,19 @@ export async function reorderStages(orderedIds: string[]) {
 export async function recolorStage(stageId: string, color: string) {
   await requireSession();
   await updateStageOrThrow(stageId, { color });
+}
+
+/**
+ * Sets a stage's behavior flags (Won, Lost, Needs-my-action) — the only
+ * way system behavior attaches to a stage besides the settings pointers
+ * (ADR 0001). Omitted flags are untouched.
+ */
+export async function setStageFlags(
+  stageId: string,
+  flags: { isWon?: boolean; isLost?: boolean; needsAction?: boolean },
+) {
+  await requireSession();
+  await updateStageOrThrow(stageId, flags);
 }
 
 /**

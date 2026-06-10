@@ -15,6 +15,7 @@ import {
   recolorStage,
   renameStage,
   reorderStages,
+  setStageFlags,
 } from "@/app/admin/stages/actions";
 import {
   STAGE_COLORS,
@@ -118,6 +119,36 @@ function ColorSwatches({
         />
       ))}
     </div>
+  );
+}
+
+function FlagToggle({
+  label,
+  help,
+  checked,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  help: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled: boolean;
+}) {
+  return (
+    <label className="flex items-start gap-2 text-sm text-(--adm-text)">
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 accent-forest"
+      />
+      <span>
+        {label}
+        <span className="block text-xs text-(--adm-text-muted)">{help}</span>
+      </span>
+    </label>
   );
 }
 
@@ -277,6 +308,9 @@ export function EditStageButton({
   const [name, setName] = useState(stage.name);
   const [color, setColor] = useState(stage.color);
   const [position, setPosition] = useState(currentIndex);
+  const [isWon, setIsWon] = useState(stage.isWon);
+  const [isLost, setIsLost] = useState(stage.isLost);
+  const [needsAction, setNeedsAction] = useState(stage.needsAction);
   const [destinationId, setDestinationId] = useState(slots[0]?.id ?? "");
   const [enqueueAutomations, setEnqueueAutomations] = useState(false);
   const [entryRepointId, setEntryRepointId] = useState(slots[0]?.id ?? "");
@@ -291,6 +325,9 @@ export function EditStageButton({
       setName(stage.name);
       setColor(stage.color);
       setPosition(currentIndex);
+      setIsWon(stage.isWon);
+      setIsLost(stage.isLost);
+      setNeedsAction(stage.needsAction);
       setDestinationId(slots[0]?.id ?? "");
       setEnqueueAutomations(false);
       setEntryRepointId(slots[0]?.id ?? "");
@@ -307,6 +344,13 @@ export function EditStageButton({
         }
         if (color !== stage.color) {
           await recolorStage(stage.id, color);
+        }
+        if (
+          isWon !== stage.isWon ||
+          isLost !== stage.isLost ||
+          needsAction !== stage.needsAction
+        ) {
+          await setStageFlags(stage.id, { isWon, isLost, needsAction });
         }
         if (position !== currentIndex) {
           const ids = slots.map((s) => s.id);
@@ -365,6 +409,32 @@ export function EditStageButton({
             onChange={setPosition}
             disabled={pending}
           />
+        </div>
+        <div className="space-y-2">
+          <label className={LABEL}>Behavior</label>
+          <div className="space-y-2">
+            <FlagToggle
+              label="Won"
+              help="Leads here are finished and count as won — shown in Closed, no automated emails."
+              checked={isWon}
+              onChange={setIsWon}
+              disabled={pending}
+            />
+            <FlagToggle
+              label="Lost"
+              help="Leads here are finished and count as lost — shown in Closed, no automated emails."
+              checked={isLost}
+              onChange={setIsLost}
+              disabled={pending}
+            />
+            <FlagToggle
+              label="Needs my action"
+              help="Leads here surface in the Inbox as waiting on you."
+              checked={needsAction}
+              onChange={setNeedsAction}
+              disabled={pending}
+            />
+          </div>
         </div>
       </div>
       <footer className="px-6 py-3 border-t border-(--adm-border) bg-(--adm-surface-2) flex items-center gap-2">

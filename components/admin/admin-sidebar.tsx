@@ -12,6 +12,7 @@ import {
   Send,
   FileText,
   LogOut,
+  SlidersHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -93,6 +94,12 @@ const SECTIONS: Section[] = [
         label: "Closed",
         icon: Archive,
         countKey: "closed",
+      },
+      {
+        id: "pipeline-settings",
+        href: "/admin/settings/pipeline",
+        label: "Settings",
+        icon: SlidersHorizontal,
       },
     ],
   },
