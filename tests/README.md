@@ -5,7 +5,10 @@ database**: global setup creates a uniquely named database on the local
 server (`TEST_DATABASE_URL`, falling back to the `DATABASE_URL` in
 `.env.local` — non-local hosts are refused), runs the drizzle migrations
 into it, and drops it again after the run. Tables are truncated between
-tests; test files run sequentially because they share the database.
+tests, then the default pipeline (the eight seeded stages and the
+settings row, from `lib/stages/defaults.ts`) is re-seeded so every test
+starts from the stock configuration; test files run sequentially because
+they share the database.
 
 ## The rules these tests follow
 
