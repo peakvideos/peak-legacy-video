@@ -32,6 +32,32 @@ The codebase is intentionally written so that **missing credentials don't break 
 
 This means you can ship Phase 4 end-to-end with credentials still pending, and turn each integration on independently as the values come in.
 
+## Database migrations
+
+Production migrations apply **automatically during the production deploy**:
+`vercel.json` pins the build command to `pnpm build:vercel`, which runs
+`pnpm db:migrate` before `next build` — but only when `VERCEL_ENV` is
+`production`. Merging a PR that contains a migration applies it as the
+production build starts; if the migration fails, the build fails and the
+previous deployment stays live.
+
+- **Preview deploys do not migrate.** A PR's preview build skips the
+  migrate step entirely, so an unmerged migration can never touch the
+  production database.
+- **Local `pnpm build` is untouched** (`VERCEL_ENV` is unset). Apply
+  migrations locally with `pnpm db:migrate` as before.
+- Because `vercel.json`'s `buildCommand` overrides the dashboard's Build
+  Command setting, the pipeline behavior is governed by this repo — don't
+  re-add a Build Command override in the Vercel project settings.
+- Write migrations to ship dark (new code tolerates the old schema and
+  vice versa): the migration runs at build time, a few minutes before the
+  new code starts serving, and an aborted build leaves the schema migrated
+  under the old deployment.
+- Emergency manual run against production:
+  `DATABASE_URL=<railway prod url> pnpm exec drizzle-kit migrate`
+  (drizzle records applied migrations in `__drizzle_migrations`, so
+  re-running is a no-op).
+
 ## Where to set env vars
 
 - **Local dev**: `.env.local` at the project root (git-ignored). See `.env.example` for the full list.
@@ -70,4 +96,4 @@ Two hard-won operational gotchas (both caused a silent multi-week outage in May�
 
   The endpoint picks up at most 25 due jobs per call, sends each via Gmail SMTP, retries failures with backoff (1m → 5m → 30m → 2h → 6h, then `failed`), and marks already-booked leads' jobs as `cancelled`.
 
-There is **no Vercel cron** — `vercel.json` was removed because Vercel's Hobby plan caps crons at once per day.
+There is **no Vercel cron** — Vercel's Hobby plan caps crons at once per day, so the queue is drained from Railway instead. (`vercel.json` exists again, but only to pin the build command for migrations — keep crons out of it.)
