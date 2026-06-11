@@ -47,6 +47,7 @@ export async function addAutomation(args: {
   });
 
   revalidatePath(`/admin/stages/${stageId}`);
+  revalidatePath("/admin/journey");
   revalidatePath("/admin");
 }
 
@@ -71,6 +72,7 @@ export async function updateAutomation(args: {
     .where(eq(stageAutomations.id, args.id));
 
   revalidatePath(`/admin/stages/${stageId}`);
+  revalidatePath("/admin/journey");
   revalidatePath("/admin");
 }
 
@@ -92,6 +94,7 @@ export async function removeAutomation(args: { id: string; stage: string }) {
   });
 
   revalidatePath(`/admin/stages/${stageId}`);
+  revalidatePath("/admin/journey");
   revalidatePath("/admin");
 }
 
@@ -112,4 +115,5 @@ export async function reorderAutomations(args: {
   });
 
   revalidatePath(`/admin/stages/${stageId}`);
+  revalidatePath("/admin/journey");
 }

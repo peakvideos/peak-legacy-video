@@ -65,5 +65,5 @@ A read-time derivation: a Lead untouched for at least the Cold threshold (settin
 _Avoid_: stale (the demoted seeded Stage of that name), auto-archive
 
 **Journey**:
-The planned single view showing every Stage left-to-right with its Automations as time-ordered cards — the Owner's one editing surface for the email experience. Replaces the Templates settings page and per-Stage pages when it lands.
+The single view showing every Stage left-to-right with its Automations as time-ordered cards (delay first, drag-set position breaking ties) — the Owner's one editing surface for the email experience: delays edit in place, Automations drag-reorder, emails are added by picking a Template or writing one in place, and detaching shelves the Template as Unattached. The Templates settings page and per-Stage pages remain until the Journey reaches full parity (inline Template editing is still pending).
 _Avoid_: sequence editor, flow builder

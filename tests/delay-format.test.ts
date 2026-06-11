@@ -1,5 +1,38 @@
 import { expect, test } from "vitest";
-import { formatDelayLabel, formatDelayPhrase } from "@/lib/admin/delay";
+import {
+  formatDelayLabel,
+  formatDelayPhrase,
+  parseDelay,
+} from "@/lib/admin/delay";
+
+test("plain delay formats parse to minutes: 5m, 2h, 3d", () => {
+  expect(parseDelay("5m")).toBe(5);
+  expect(parseDelay("2h")).toBe(120);
+  expect(parseDelay("3d")).toBe(60 * 24 * 3);
+  expect(parseDelay("0m")).toBe(0);
+});
+
+test("the parser is forgiving about case, spacing, and fractions", () => {
+  expect(parseDelay(" 2H ")).toBe(120);
+  expect(parseDelay("1.5h")).toBe(90);
+  expect(parseDelay("0.5d")).toBe(60 * 12);
+});
+
+test("a bare number is taken as minutes", () => {
+  expect(parseDelay("45")).toBe(45);
+  expect(parseDelay("0")).toBe(0);
+});
+
+test("invalid input is rejected, not coerced", () => {
+  expect(parseDelay("")).toBeNull();
+  expect(parseDelay("   ")).toBeNull();
+  expect(parseDelay("-5m")).toBeNull();
+  expect(parseDelay("-5")).toBeNull();
+  expect(parseDelay("5w")).toBeNull();
+  expect(parseDelay("soon")).toBeNull();
+  expect(parseDelay("h")).toBeNull();
+  expect(parseDelay("Infinity")).toBeNull();
+});
 
 test("delays read as humans say them", () => {
   expect(formatDelayLabel(0)).toBe("immediately");

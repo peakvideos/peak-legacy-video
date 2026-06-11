@@ -5,10 +5,17 @@
 
 const DELAY_RE = /^\s*(\d+(?:\.\d+)?)\s*([mhd])\s*$/i;
 
+/** What to tell the owner when parseDelay rejects their input. */
+export const DELAY_FORMAT_HINT =
+  "Use a number followed by m/h/d (e.g. 5m, 2h, 3d).";
+
 export function parseDelay(input: string): number | null {
   const m = DELAY_RE.exec(input);
   if (!m) {
-    const n = Number(input.trim());
+    // Number("") is 0 — blank input must not coerce to "immediately".
+    const trimmed = input.trim();
+    if (trimmed === "") return null;
+    const n = Number(trimmed);
     if (Number.isFinite(n) && n >= 0) return n;
     return null;
   }

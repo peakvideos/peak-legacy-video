@@ -7,16 +7,9 @@ import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { emailTemplates, stageAutomations } from "@/lib/db/schema";
 import { sendStoredTemplateEmail } from "@/lib/email";
+import { uniqueTemplateSlug } from "@/lib/admin/template-slug";
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-
-function slugify(input: string): string {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
 
 export async function createTemplate(formData: FormData) {
   await requireSession();
@@ -25,19 +18,7 @@ export async function createTemplate(formData: FormData) {
   if (!name) throw new Error("Name is required.");
   if (!subject) throw new Error("Subject is required.");
 
-  const baseSlug = slugify(name) || `template-${Date.now()}`;
-  let slug = baseSlug;
-  let attempt = 1;
-  while (true) {
-    const [existing] = await db
-      .select({ id: emailTemplates.id })
-      .from(emailTemplates)
-      .where(eq(emailTemplates.slug, slug))
-      .limit(1);
-    if (!existing) break;
-    attempt += 1;
-    slug = `${baseSlug}-${attempt}`;
-  }
+  const slug = await uniqueTemplateSlug(name);
 
   const [inserted] = await db
     .insert(emailTemplates)
