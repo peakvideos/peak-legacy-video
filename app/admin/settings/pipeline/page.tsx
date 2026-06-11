@@ -15,9 +15,9 @@ export default async function PipelineSettingsPage() {
       <header>
         <h1 className="text-(--adm-text) text-2xl mb-1">Pipeline settings</h1>
         <p className="text-(--adm-text-muted) text-xs">
-          Where new inquiries land and where booked calls promote to. Every
-          stage stays renameable — behavior follows these pointers, not
-          names.
+          Where new inquiries land, where booked calls promote to, and when
+          a quiet lead reads as cold. Every stage stays renameable —
+          behavior follows these pointers, not names.
         </p>
       </header>
 
@@ -25,6 +25,7 @@ export default async function PipelineSettingsPage() {
         stages={stages}
         entryStageId={settings.entryStageId}
         bookingStageId={settings.bookingStageId}
+        coldThresholdDays={settings.coldThresholdDays}
       />
     </div>
   );

@@ -108,3 +108,15 @@ test("inbox waiting events come from the Needs-action flag; cold events respect 
   events = await loadInboxEvents();
   expect(events.filter((e) => e.kind === "cold")).toHaveLength(0);
 });
+
+test("the stuck view boundary: one hour short of the threshold is warm, at the threshold is cold", async () => {
+  const HOUR_MS = 60 * 60 * 1000;
+  const justInside = await createLead({
+    updatedAt: new Date(Date.now() - 14 * DAY_MS + HOUR_MS),
+  });
+  const atThreshold = await createLead({ updatedAt: daysAgo(14) });
+
+  const rows = await loadStuckLeadRows();
+  expect(rows.map((r) => r.id)).toContain(atThreshold.id);
+  expect(rows.map((r) => r.id)).not.toContain(justInside.id);
+});

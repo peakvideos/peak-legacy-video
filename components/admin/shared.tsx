@@ -1,3 +1,4 @@
+import { Flame } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { stagePalette, type StageRow } from "@/lib/admin/stages";
 
@@ -24,6 +25,20 @@ export function PackageBadge({ pkg }: { pkg: PackageInterest }) {
       )}
     >
       {PKG_LABELS[pkg]}
+    </span>
+  );
+}
+
+/**
+ * The Cold indicator — a lead untouched past the cold threshold. Purely a
+ * spotting aid; nothing ever moves a lead because it's cold.
+ */
+export function ColdBadge({ detail }: { detail?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-px border font-heading text-[0.62rem] uppercase tracking-[0.08em] bg-blush/20 border-blush/45 text-blush">
+      <Flame className="size-3" />
+      Cold
+      {detail && <span className="normal-case tracking-normal">· {detail}</span>}
     </span>
   );
 }

@@ -1,7 +1,8 @@
 import "server-only";
-import { and, eq, gte, inArray, lt, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lt, lte, notInArray, or, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bookings, leads, stages } from "@/lib/db/schema";
+import { coldCutoff } from "@/lib/admin/cold";
 import { getSettings } from "@/lib/stages/settings";
 import type { AdminSidebarCounts } from "@/components/admin/admin-sidebar";
 
@@ -19,7 +20,6 @@ export async function loadSidebarCounts(): Promise<AdminSidebarCounts> {
   const { coldThresholdDays } = await getSettings();
   const now = new Date();
   const weekFromNow = new Date(now.getTime() + 7 * DAY_MS);
-  const coldCutoff = new Date(now.getTime() - coldThresholdDays * DAY_MS);
 
   const [
     [{ value: inboxCount }],
@@ -45,7 +45,7 @@ export async function loadSidebarCounts(): Promise<AdminSidebarCounts> {
       .where(
         and(
           notInArray(leads.stageId, terminalStageIds()),
-          lt(leads.updatedAt, coldCutoff),
+          lte(leads.updatedAt, coldCutoff(coldThresholdDays, now)),
         ),
       ),
     db

@@ -2,6 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bookings, emailJobs, emailTemplates, leads } from "@/lib/db/schema";
+import { isCold } from "@/lib/admin/cold";
 import { listStages } from "@/lib/stages";
 import { getSettings } from "@/lib/stages/settings";
 import type { PackageInterest } from "@/components/admin/shared";
@@ -123,7 +124,7 @@ export async function loadInboxEvents(): Promise<InboxEvent[]> {
       });
     }
 
-    if (!isTerminal && stuckDays >= coldThresholdDays) {
+    if (isCold(l, stage, coldThresholdDays)) {
       events.push({
         ...base,
         id: `cold-${l.id}`,

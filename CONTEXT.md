@@ -61,7 +61,7 @@ The global settings switch that holds all sending without cancelling anything. S
 _Avoid_: disabled, stopped
 
 **Cold**:
-A read-time derivation: a Lead untouched for longer than the Cold threshold (settings, default 14 days). Cold surfaces indicators and inbox events but never moves a Lead.
+A read-time derivation: a Lead untouched for at least the Cold threshold (settings, default 14 days). Cold surfaces indicators and inbox events but never moves a Lead.
 _Avoid_: stale (the demoted seeded Stage of that name), auto-archive
 
 **Journey**:

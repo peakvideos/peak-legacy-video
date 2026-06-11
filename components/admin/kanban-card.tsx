@@ -3,8 +3,10 @@
 import { useDraggable } from "@dnd-kit/core";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { isCold } from "@/lib/admin/cold";
 import type { StageRow, StageSettings } from "@/lib/admin/stages";
 import type { LeadDetail } from "@/lib/admin/lead-detail-types";
+import { ColdBadge } from "./shared";
 
 const PACKAGE_BADGES = {
   legacy: "Legacy",
@@ -182,11 +184,7 @@ function CardBody({
   bookingStagePosition: number;
   draggable: boolean;
 }) {
-  // Cold = still sitting in the Entry Stage past the cold threshold.
-  const isCold =
-    lead.stageId === settings.entryStageId &&
-    Date.now() - lead.createdAt.getTime() >
-      settings.coldThresholdDays * DAY_MS;
+  const cold = isCold(lead, stage, settings.coldThresholdDays);
 
   // Up to the Booking Stage the pipeline is email-driven, so an empty queue
   // is worth calling out; past it the lead is in the owner's hands and the
@@ -239,9 +237,9 @@ function CardBody({
         </p>
       )}
 
-      {isCold && (
-        <p className="mt-1.5 inline-block text-[0.6rem] uppercase tracking-[0.1em] font-heading text-amber-700 bg-amber-100/70 border border-amber-300/60 px-1.5 py-0.5">
-          Cold · {relativeTime(lead.createdAt)}
+      {cold && (
+        <p className="mt-1.5">
+          <ColdBadge detail={relativeTime(lead.updatedAt)} />
         </p>
       )}
     </>
