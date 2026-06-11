@@ -1,7 +1,8 @@
 import "server-only";
-import { asc, desc, eq, inArray, lt, notInArray, or, and } from "drizzle-orm";
+import { asc, desc, eq, inArray, lte, notInArray, or, and } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bookings, emailJobs, emailTemplates, leads, stages } from "@/lib/db/schema";
+import { coldCutoff } from "@/lib/admin/cold";
 import { getSettings } from "@/lib/stages/settings";
 import type { PackageInterest } from "@/components/admin/shared";
 
@@ -20,8 +21,6 @@ export type LeadRow = {
   nextEmailName: string | null;
   nextEmailSendAt: Date | null;
 };
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Subquery: ids of terminal stages (Won or Lost flag). */
 function terminalStageIds() {
@@ -126,12 +125,11 @@ export async function loadClosedLeadRows(
 }
 
 /**
- * Non-terminal leads untouched for longer than the cold threshold — the
+ * Non-terminal leads untouched for at least the cold threshold — the
  * Stuck view.
  */
 export async function loadStuckLeadRows(): Promise<LeadRow[]> {
   const { coldThresholdDays } = await getSettings();
-  const cutoff = new Date(Date.now() - coldThresholdDays * DAY_MS);
 
   const rows = await db
     .select()
@@ -139,7 +137,7 @@ export async function loadStuckLeadRows(): Promise<LeadRow[]> {
     .where(
       and(
         notInArray(leads.stageId, terminalStageIds()),
-        lt(leads.updatedAt, cutoff),
+        lte(leads.updatedAt, coldCutoff(coldThresholdDays)),
       ),
     )
     .orderBy(desc(leads.updatedAt));

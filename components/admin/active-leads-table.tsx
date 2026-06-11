@@ -16,6 +16,7 @@ import {
   Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isCold } from "@/lib/admin/cold";
 import {
   splitBoardViews,
   type StageRow,
@@ -24,6 +25,7 @@ import {
 import type { LeadRow } from "@/lib/admin/lead-rows";
 import {
   Avatar,
+  ColdBadge,
   PackageBadge,
   StageBadge,
   dayLabel,
@@ -47,6 +49,7 @@ const SORT_OPTIONS: SortOption[] = [
 
 type StageFilter = string | "all";
 type PkgFilter = LeadRow["packageInterest"] | "all";
+type ColdFilter = "all" | "cold";
 
 export function ActiveLeadsTable({
   rows,
@@ -60,6 +63,7 @@ export function ActiveLeadsTable({
   const [sortId, setSortId] = useState<SortId>("recent");
   const [stageFilter, setStageFilter] = useState<StageFilter>("all");
   const [pkgFilter, setPkgFilter] = useState<PkgFilter>("all");
+  const [coldFilter, setColdFilter] = useState<ColdFilter>("all");
   const [query, setQuery] = useState("");
 
   const stageById = useMemo(
@@ -75,6 +79,11 @@ export function ActiveLeadsTable({
     return rows.filter((l) => {
       if (stageFilter !== "all" && l.stageId !== stageFilter) return false;
       if (pkgFilter !== "all" && l.packageInterest !== pkgFilter) return false;
+      if (
+        coldFilter === "cold" &&
+        !isCold(l, stageById.get(l.stageId), settings.coldThresholdDays)
+      )
+        return false;
       if (query) {
         const q = query.toLowerCase();
         const haystack = (
@@ -88,7 +97,7 @@ export function ActiveLeadsTable({
       }
       return true;
     });
-  }, [rows, stageFilter, pkgFilter, query]);
+  }, [rows, stageFilter, pkgFilter, coldFilter, query, stageById, settings.coldThresholdDays]);
 
   const sorted = useMemo(() => {
     const fns: Record<SortId, (a: LeadRow, b: LeadRow) => number> = {
@@ -156,6 +165,14 @@ export function ActiveLeadsTable({
               { id: "legacy", label: "Legacy" },
               { id: "heirloom", label: "Heirloom" },
               { id: "unsure", label: "Unsure" },
+            ]}
+          />
+          <FilterDropdown
+            value={coldFilter}
+            onChange={(v) => setColdFilter(v as ColdFilter)}
+            options={[
+              { id: "all", label: "Warm & cold" },
+              { id: "cold", label: "Cold only" },
             ]}
           />
           <FilterDropdown
@@ -324,9 +341,12 @@ function Row({
         </div>
       </td>
       <td className="py-3 px-4">
-        <span className="text-[11px] text-(--adm-text-muted)">
-          {relativeTime(lead.updatedAt)}
-        </span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] text-(--adm-text-muted)">
+            {relativeTime(lead.updatedAt)}
+          </span>
+          {isCold(lead, stage, coldThresholdDays) && <ColdBadge />}
+        </div>
       </td>
       <td className="py-3 px-4">
         <div
@@ -362,8 +382,6 @@ function Row({
   );
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 function computeNextAction(
   lead: LeadRow,
   stage: StageRow | undefined,
@@ -386,7 +404,7 @@ function computeNextAction(
       main: `${lead.nextEmailName} · ${dayLabel(lead.nextEmailSendAt)}`,
     };
   }
-  if (Date.now() - lead.updatedAt.getTime() > coldThresholdDays * DAY_MS) {
+  if (isCold(lead, stage, coldThresholdDays)) {
     return {
       icon: Flame,
       tone: "text-blush",

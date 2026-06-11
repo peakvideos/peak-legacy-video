@@ -13,8 +13,10 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { Flame } from "lucide-react";
 import { toast } from "sonner";
 import { setLeadStage } from "@/app/admin/actions";
+import { isCold } from "@/lib/admin/cold";
 import { KanbanCard, type KanbanLeadRow } from "./kanban-card";
 import { showStageMoveToast } from "./move-toast";
 import { AddStageButton, EditStageButton } from "./stage-editor";
@@ -75,6 +77,7 @@ export function KanbanBoard({
   const [, startTransition] = useTransition();
   const [view, setView] = useState<KanbanView>("active");
   const [query, setQuery] = useState("");
+  const [coldOnly, setColdOnly] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -98,11 +101,16 @@ export function KanbanBoard({
     );
   }
 
+  const matchesFilters = (lead: KanbanLeadRow) =>
+    leadMatchesQuery(lead, query) &&
+    (!coldOnly ||
+      isCold(lead, stageById.get(lead.stageId), settings.coldThresholdDays));
+
   const grouped = new Map<string, KanbanLeadRow[]>(
     ordered.map((s) => [s.id, []]),
   );
   for (const lead of optimistic) {
-    if (!leadMatchesQuery(lead, query)) continue;
+    if (!matchesFilters(lead)) continue;
     const bucket = grouped.get(lead.stageId);
     if (bucket) {
       bucket.push(lead);
@@ -124,7 +132,7 @@ export function KanbanBoard({
         ? views.settled
         : ordered;
 
-  const totalMatches = optimistic.filter((l) => leadMatchesQuery(l, query)).length;
+  const totalMatches = optimistic.filter(matchesFilters).length;
 
   const draggingLead = draggingId
     ? optimistic.find((l) => l.id === draggingId)
@@ -162,11 +170,14 @@ export function KanbanBoard({
 
   const controls = (
     <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-      <ViewTabs view={view} onChange={setView} />
+      <div className="flex items-center gap-2 flex-wrap">
+        <ViewTabs view={view} onChange={setView} />
+        <ColdToggle active={coldOnly} onChange={setColdOnly} />
+      </div>
       <SearchInput
         value={query}
         onChange={setQuery}
-        matchCount={query ? totalMatches : null}
+        matchCount={query || coldOnly ? totalMatches : null}
       />
     </div>
   );
@@ -252,6 +263,32 @@ function ViewTabs({
         </button>
       ))}
     </div>
+  );
+}
+
+/** Narrows the board to Cold leads — untouched past the cold threshold. */
+function ColdToggle({
+  active,
+  onChange,
+}: {
+  active: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!active)}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex items-center gap-1.5 font-heading text-[0.7rem] uppercase tracking-[0.12em] px-3 py-1.5 border",
+        active
+          ? "bg-blush/70 border-blush text-forest"
+          : "border-(--adm-border) bg-(--adm-surface) text-(--adm-text-muted) hover:text-(--adm-text) hover:bg-(--adm-hover)",
+      )}
+    >
+      <Flame className="size-3" />
+      Cold
+    </button>
   );
 }
 

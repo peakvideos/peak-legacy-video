@@ -11,6 +11,7 @@ import { loadInboxEvents } from "@/lib/admin/inbox-events";
 import {
   loadActiveLeadRows,
   loadClosedLeadRows,
+  loadStuckLeadRows,
 } from "@/lib/admin/lead-rows";
 import { loadSidebarCounts } from "@/lib/admin/sidebar-counts";
 import { listStages } from "@/lib/stages";
@@ -201,4 +202,29 @@ test("flag toggling and settings re-pointing require an authenticated session", 
   await expect(
     updatePipelineSettings({ entryStageId: stage.id }),
   ).rejects.toThrow("Unauthorized");
+});
+
+test("the owner can change the cold threshold from settings, and cold views follow it", async () => {
+  const twelveDaysQuiet = await createLead({
+    updatedAt: new Date(Date.now() - 12 * 86_400_000),
+  });
+
+  // At the default 14-day threshold the lead is still warm.
+  let stuck = await loadStuckLeadRows();
+  expect(stuck.map((r) => r.id)).toEqual([]);
+
+  await updatePipelineSettings({ coldThresholdDays: 10 });
+
+  expect((await getSettings()).coldThresholdDays).toBe(10);
+  stuck = await loadStuckLeadRows();
+  expect(stuck.map((r) => r.id)).toEqual([twelveDaysQuiet.id]);
+});
+
+test("the cold threshold refuses zero, negative, and fractional day counts", async () => {
+  for (const bad of [0, -3, 2.5]) {
+    await expect(
+      updatePipelineSettings({ coldThresholdDays: bad }),
+    ).rejects.toThrow("whole number of days");
+  }
+  expect((await getSettings()).coldThresholdDays).toBe(14);
 });
