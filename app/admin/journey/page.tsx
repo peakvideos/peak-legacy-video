@@ -1,12 +1,21 @@
 import Link from "next/link";
-import { loadJourney, type JourneyCard } from "@/lib/admin/journey";
-import { formatDelayPhrase } from "@/lib/admin/delay";
+import { loadJourney } from "@/lib/admin/journey";
+import { listTemplates } from "@/lib/admin/templates";
 import { stagePalette } from "@/lib/admin/stages";
+import { JourneyStageColumn } from "./journey-stage-column";
 
 export const dynamic = "force-dynamic";
 
 export default async function JourneyPage() {
-  const journey = await loadJourney();
+  const [journey, activeTemplates] = await Promise.all([
+    loadJourney(),
+    listTemplates({ archived: false }),
+  ]);
+  const templates = activeTemplates.map((t) => ({
+    id: t.id,
+    name: t.name,
+    subject: t.subject,
+  }));
 
   return (
     <div className="flex-1 overflow-auto px-6 py-6">
@@ -20,40 +29,13 @@ export default async function JourneyPage() {
 
       <div className="flex gap-3 overflow-x-auto pb-4">
         {journey.stages.map((stage) => (
-          <section
+          <JourneyStageColumn
             key={stage.id}
-            id={`stage-${stage.id}`}
-            className={`flex flex-col bg-(--adm-surface-2) border-t-2 min-w-[260px] w-[260px] shrink-0 scroll-mt-6 ${stagePalette(stage.color).tone}`}
-          >
-            <header className="flex items-center justify-between px-3 py-2.5 border-b border-(--adm-border)">
-              <h2 className="font-heading text-[0.72rem] uppercase tracking-[0.12em] text-(--adm-text) truncate">
-                {stage.name}
-              </h2>
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span className="font-heading text-xs text-(--adm-text-muted)">
-                  {stage.automations.length}
-                </span>
-                <Link
-                  href={`/admin/stages/${stage.id}`}
-                  className="text-(--adm-text-muted) hover:text-gold text-base leading-none"
-                  title={`Edit ${stage.name} automations`}
-                >
-                  ⚙
-                </Link>
-              </div>
-            </header>
-            <div className="flex-1 px-2 py-2 space-y-2 min-h-[120px]">
-              {stage.automations.length === 0 ? (
-                <p className="text-xs text-(--adm-text-muted) text-center px-3 py-6">
-                  No automated emails.
-                </p>
-              ) : (
-                stage.automations.map((card) => (
-                  <AutomationCard key={card.id} card={card} />
-                ))
-              )}
-            </div>
-          </section>
+            stage={{ id: stage.id, name: stage.name }}
+            cards={stage.automations}
+            templates={templates}
+            toneClass={stagePalette(stage.color).tone}
+          />
         ))}
       </div>
 
@@ -82,24 +64,6 @@ export default async function JourneyPage() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function AutomationCard({ card }: { card: JourneyCard }) {
-  return (
-    <div className="bg-(--adm-surface) border border-(--adm-border) px-3 py-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="text-sm text-(--adm-text) truncate">
-          {card.templateName}
-        </p>
-        <p className="font-heading text-[0.65rem] uppercase tracking-[0.1em] text-gold shrink-0">
-          {formatDelayPhrase(card.delayMinutes)}
-        </p>
-      </div>
-      <p className="text-xs text-(--adm-text-muted) truncate">
-        {card.templateSubject}
-      </p>
     </div>
   );
 }

@@ -17,7 +17,12 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
-import { formatDelay, formatDelayPhrase, parseDelay } from "@/lib/admin/delay";
+import {
+  DELAY_FORMAT_HINT,
+  formatDelay,
+  formatDelayPhrase,
+  parseDelay,
+} from "@/lib/admin/delay";
 import {
   addAutomation,
   removeAutomation,
@@ -185,7 +190,7 @@ function AutomationRow({
     setError(null);
     const minutes = parseDelay(delay);
     if (minutes == null) {
-      setError("Use a number followed by m/h/d (e.g. 5m, 2h, 3d).");
+      setError(DELAY_FORMAT_HINT);
       return;
     }
     startTransition(async () => {
@@ -340,7 +345,7 @@ function AddAutomationForm({
     }
     const minutes = parseDelay(delay);
     if (minutes == null) {
-      setError("Use a number followed by m/h/d (e.g. 5m, 2h, 3d).");
+      setError(DELAY_FORMAT_HINT);
       return;
     }
     startTransition(async () => {
