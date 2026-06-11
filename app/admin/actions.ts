@@ -7,6 +7,11 @@ import { db } from "@/lib/db";
 import { emailJobs, emailTemplates, leads, stages } from "@/lib/db/schema";
 import { transitionLeadStageAutomations } from "@/lib/email/sequence";
 import { sendStoredTemplateEmail } from "@/lib/email";
+import {
+  processEmailJob,
+  renderEmailJob,
+  type JobSendResult,
+} from "@/lib/email/job-send";
 import { unsubscribeUrlFor } from "@/lib/email/unsubscribe";
 import { isNull } from "drizzle-orm";
 
@@ -250,6 +255,30 @@ export async function setLeadUnsubscribed(leadId: string, value: boolean) {
 }
 
 /**
+ * Renders an email job for the outbox preview — the exact subject and body
+ * the lead will receive, via the same rendering path the send worker uses.
+ */
+export async function previewEmailJob(jobId: string) {
+  await requireSession();
+  return renderEmailJob(jobId);
+}
+
+/**
+ * Sends a queued email job immediately, ahead of its scheduled time. Goes
+ * through the same send pipeline as the cron worker, so the result —
+ * success, retry backoff, or terminal failure — is recorded identically.
+ */
+export async function sendEmailJobNow(jobId: string): Promise<JobSendResult> {
+  await requireSession();
+
+  const result = await processEmailJob(jobId);
+
+  revalidatePath("/admin/outbox");
+  revalidatePath("/admin/sequences");
+  return result;
+}
+
+/**
  * Cancels a single queued email_jobs row. Only pending jobs can be
  * cancelled — sent/failed/cancelled rows are no-ops to avoid rewriting
  * history.
@@ -269,5 +298,6 @@ export async function cancelEmailJob(jobId: string) {
 
   revalidatePath(`/admin/leads/${result[0].leadId}`);
   revalidatePath("/admin");
+  revalidatePath("/admin/outbox");
   revalidatePath("/admin/sequences");
 }
