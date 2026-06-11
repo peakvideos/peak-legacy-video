@@ -9,6 +9,7 @@ import {
   Columns3,
   LayoutDashboard,
   Archive,
+  Mailbox,
   Route,
   Send,
   FileText,
@@ -108,6 +109,7 @@ const SECTIONS: Section[] = [
     label: "Automations",
     items: [
       { id: "journey", href: "/admin/journey", label: "Journey", icon: Route },
+      { id: "outbox", href: "/admin/outbox", label: "Outbox", icon: Mailbox },
       { id: "sequences", href: "/admin/sequences", label: "Sequences", icon: Send },
       {
         id: "templates",
