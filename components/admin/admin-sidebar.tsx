@@ -11,7 +11,6 @@ import {
   Archive,
   Mailbox,
   Route,
-  Send,
   FileText,
   LogOut,
   SlidersHorizontal,
@@ -110,7 +109,6 @@ const SECTIONS: Section[] = [
     items: [
       { id: "journey", href: "/admin/journey", label: "Journey", icon: Route },
       { id: "outbox", href: "/admin/outbox", label: "Outbox", icon: Mailbox },
-      { id: "sequences", href: "/admin/sequences", label: "Sequences", icon: Send },
       {
         id: "templates",
         href: "/admin/settings/templates",

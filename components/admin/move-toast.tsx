@@ -10,7 +10,7 @@ import {
 /**
  * Surfaces what a stage move did — how many pending emails it cancelled
  * and how many it scheduled — so moves never have silent side effects.
- * The scheduled count links into the email queue, and Undo restores the
+ * The scheduled count links into the Outbox, and Undo restores the
  * previous stage, the cancelled jobs (original send times), and removes
  * the jobs the move scheduled.
  */
@@ -29,7 +29,7 @@ export function showStageMoveToast({
         {move.cancelled} pending email{move.cancelled === 1 ? "" : "s"}{" "}
         cancelled,{" "}
         <Link
-          href="/admin/sequences"
+          href="/admin/outbox"
           className="underline underline-offset-2 hover:text-gold"
         >
           {move.scheduled} scheduled

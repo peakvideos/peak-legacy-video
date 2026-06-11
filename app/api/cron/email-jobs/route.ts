@@ -3,6 +3,7 @@ import { and, eq, lte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { emailJobs } from "@/lib/db/schema";
 import { processEmailJob } from "@/lib/email/job-send";
+import { getSettings } from "@/lib/stages/settings";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -17,6 +18,14 @@ function isAuthorized(req: Request): boolean {
 }
 
 async function processBatch() {
+  // The global Pause switch holds every job in place: nothing is attempted,
+  // nothing is cancelled. Jobs that come due while Paused simply stay
+  // pending and send on the first run after resume.
+  const { paused } = await getSettings();
+  if (paused) {
+    return { paused, picked: 0, sent: 0, cancelled: 0, retried: 0, failed: 0 };
+  }
+
   // Pick up due, pending jobs; each runs through the shared send pipeline —
   // the same one the outbox's "Send now" uses.
   const due = await db
@@ -32,7 +41,7 @@ async function processBatch() {
     counts[outcome]++;
   }
 
-  return { picked: due.length, ...counts };
+  return { paused, picked: due.length, ...counts };
 }
 
 export async function GET(req: Request) {
