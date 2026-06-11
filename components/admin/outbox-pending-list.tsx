@@ -124,13 +124,9 @@ export function OutboxPendingList({ items }: { items: OutboxItem[] }) {
                     {item.recipientEmail}
                   </TableCell>
                   <TableCell className="max-w-[180px] sm:max-w-[260px]">
-                    <Link
-                      href={`/admin/settings/templates/${item.templateId}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="font-heading text-(--adm-text) hover:text-gold truncate block"
-                    >
+                    <span className="font-heading text-(--adm-text) truncate block">
                       {item.templateName}
-                    </Link>
+                    </span>
                     <span className="text-(--adm-text-muted) text-xs truncate block">
                       {item.templateSubject}
                     </span>

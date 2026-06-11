@@ -4,11 +4,11 @@ import { db } from "@/lib/db";
 import { emailTemplates, stageAutomations } from "@/lib/db/schema";
 import {
   addAutomation,
+  createTemplateAndAttach,
   removeAutomation,
   reorderAutomations,
   updateAutomation,
-} from "@/app/admin/stages/[stage]/actions";
-import { createTemplateAndAttach } from "@/app/admin/journey/actions";
+} from "@/app/admin/journey/actions";
 import { loadJourney } from "@/lib/admin/journey";
 import { signInAsOwner } from "./helpers/auth";
 import {

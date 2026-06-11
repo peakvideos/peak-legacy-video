@@ -11,7 +11,6 @@ import {
   Archive,
   Mailbox,
   Route,
-  FileText,
   LogOut,
   SlidersHorizontal,
 } from "lucide-react";
@@ -109,12 +108,6 @@ const SECTIONS: Section[] = [
     items: [
       { id: "journey", href: "/admin/journey", label: "Journey", icon: Route },
       { id: "outbox", href: "/admin/outbox", label: "Outbox", icon: Mailbox },
-      {
-        id: "templates",
-        href: "/admin/settings/templates",
-        label: "Templates",
-        icon: FileText,
-      },
     ],
   },
 ];
