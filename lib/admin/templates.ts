@@ -1,5 +1,5 @@
 import "server-only";
-import { asc, desc, eq } from "drizzle-orm";
+import { asc, desc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { emailTemplates } from "@/lib/db/schema";
 
@@ -13,15 +13,4 @@ export async function listTemplates(options: { archived?: boolean } = {}) {
   if (options.archived === true) return rows.filter((r) => r.archivedAt);
   if (options.archived === false) return rows.filter((r) => !r.archivedAt);
   return rows;
-}
-
-export async function getTemplate(
-  id: string,
-): Promise<EmailTemplateRow | null> {
-  const [row] = await db
-    .select()
-    .from(emailTemplates)
-    .where(eq(emailTemplates.id, id))
-    .limit(1);
-  return row ?? null;
 }

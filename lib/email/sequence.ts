@@ -79,6 +79,23 @@ export async function enqueueAutomationsForStage(
   };
 }
 
+/** Marks any pending email_jobs of the template as cancelled — the archive path. */
+export async function cancelPendingForTemplate(
+  templateId: string,
+  options: { tx?: Tx } = {},
+): Promise<void> {
+  const runner = options.tx ?? db;
+  await runner
+    .update(emailJobs)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(
+      and(
+        eq(emailJobs.templateId, templateId),
+        eq(emailJobs.status, "pending"),
+      ),
+    );
+}
+
 /** Marks any pending email_jobs for the lead as cancelled. */
 export async function cancelPendingForLead(
   leadId: string,

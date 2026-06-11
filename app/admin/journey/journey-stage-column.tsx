@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   useEffect,
   useOptimistic,
@@ -30,11 +29,12 @@ import {
 } from "@/lib/admin/delay";
 import {
   addAutomation,
+  createTemplateAndAttach,
   removeAutomation,
   reorderAutomations,
   updateAutomation,
-} from "@/app/admin/stages/[stage]/actions";
-import { createTemplateAndAttach } from "./actions";
+} from "./actions";
+import { useTemplateEditor } from "./template-editor-sheet";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { cn } from "@/lib/utils";
 
@@ -153,6 +153,7 @@ function JourneyCardRow({
 }) {
   const sortableHandle = useSortable({ id: card.id, disabled: !sortable });
 
+  const { openTemplate } = useTemplateEditor();
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
   const [delay, setDelay] = useState("");
@@ -222,12 +223,14 @@ function JourneyCardRow({
           </button>
         )}
         <div className="flex-1 min-w-0">
-          <Link
-            href={`/admin/settings/templates/${card.templateId}`}
-            className="block text-sm text-(--adm-text) truncate hover:text-gold"
+          <button
+            type="button"
+            onClick={() => openTemplate(card.templateId)}
+            title="Edit template"
+            className="block w-full text-left text-sm text-(--adm-text) truncate hover:text-gold"
           >
             {card.templateName}
-          </Link>
+          </button>
           <p className="text-xs text-(--adm-text-muted) truncate">
             {card.templateSubject}
           </p>

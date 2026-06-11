@@ -449,13 +449,6 @@ function ColumnShell({
             settings={settings}
             leadCount={totalLeadCount}
           />
-          <Link
-            href={`/admin/stages/${stage.id}`}
-            className="text-(--adm-text-muted) hover:text-gold text-base leading-none"
-            title={`Edit ${stage.name} automations`}
-          >
-            ⚙
-          </Link>
         </div>
       </header>
       <div className="flex-1 px-2 py-2 space-y-2 min-h-[120px]">
