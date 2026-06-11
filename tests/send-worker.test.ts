@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { db } from "@/lib/db";
 import { emailJobs } from "@/lib/db/schema";
 import { GET as runWorker } from "@/app/api/cron/email-jobs/route";
-import { getSettings } from "@/lib/stages/settings";
+import { getSettings, updateSettings } from "@/lib/stages/settings";
 import { smtp } from "./stubs/nodemailer";
 import {
   attachAutomation,
@@ -185,6 +185,45 @@ test("due jobs whose template is no longer an automation of the lead's current s
   expect(await res.json()).toMatchObject({ picked: 1, cancelled: 1, sent: 0 });
   expect(smtp.sent).toHaveLength(0);
   expect((await reloadJob(job.id)).status).toBe("cancelled");
+});
+
+test("while sending is Paused the worker attempts no sends and cancels nothing", async () => {
+  await updateSettings({ paused: true });
+  const { job } = await dueJob();
+
+  const res = await runWorker(cronRequest());
+
+  expect(await res.json()).toMatchObject({ ok: true, paused: true, picked: 0 });
+  expect(smtp.sent).toHaveLength(0);
+
+  // The held job is untouched: still pending, send time intact.
+  const updated = await reloadJob(job.id);
+  expect(updated.status).toBe("pending");
+  expect(updated.sendAt.getTime()).toBe(job.sendAt.getTime());
+});
+
+test("on resume, jobs whose send time passed while Paused send on the next run — nothing is lost", async () => {
+  await updateSettings({ paused: true });
+  // Overdue long before the pause run: held, not skipped.
+  const { lead, job } = await dueJob({
+    lead: { email: "held@example.com" },
+    job: { sendAt: new Date(Date.now() - 60 * MINUTE) },
+  });
+  await runWorker(cronRequest());
+  expect(smtp.sent).toHaveLength(0);
+
+  await updateSettings({ paused: false });
+  const res = await runWorker(cronRequest());
+
+  expect(await res.json()).toMatchObject({
+    ok: true,
+    paused: false,
+    picked: 1,
+    sent: 1,
+  });
+  expect(smtp.sent).toHaveLength(1);
+  expect(smtp.sent[0].to).toBe(lead.email);
+  expect((await reloadJob(job.id)).status).toBe("sent");
 });
 
 test("the worker rejects requests without the cron secret", async () => {

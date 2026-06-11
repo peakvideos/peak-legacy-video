@@ -53,11 +53,11 @@ A scheduled send of a Template to a Lead (an `email_jobs` row): pending, sent, c
 _Avoid_: queued email, message
 
 **Outbox**:
-The planned chronological view of every upcoming and past send across all Leads, with rendered previews, Cancel, and Send now. Replaces the jobs list when it lands.
-_Avoid_: queue page, sequences page (the page it replaces)
+The chronological view of every upcoming and past send across all Leads: a Pending tab with rendered previews, Cancel, and Send now, and a Sent tab recording sent and failed sends with their errors. Replaced the jobs list.
+_Avoid_: queue page, sequences page (the page it replaced)
 
 **Paused**:
-The global settings switch that holds all sending without cancelling anything. Stored in settings now; honored by the send worker when the Outbox slice lands.
+The global switch on the Outbox that holds all sending without cancelling anything: the send worker attempts no jobs while Paused, and held emails (including overdue ones) send on the first run after resume. Send now still works — a deliberate per-email override.
 _Avoid_: disabled, stopped
 
 **Cold**:

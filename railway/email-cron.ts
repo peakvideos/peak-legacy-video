@@ -22,6 +22,8 @@ let failed = false;
 
 const cronResponse = z.object({
   ok: z.literal(true),
+  // Optional so this function can deploy ahead of or behind the web app.
+  paused: z.boolean().optional(),
   picked: z.number(),
   sent: z.number(),
   cancelled: z.number(),

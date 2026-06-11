@@ -13,6 +13,7 @@ import {
   type JobSendResult,
 } from "@/lib/email/job-send";
 import { unsubscribeUrlFor } from "@/lib/email/unsubscribe";
+import { updateSettings } from "@/lib/stages/settings";
 import { isNull } from "drizzle-orm";
 
 /**
@@ -130,7 +131,7 @@ export async function undoLeadStageMove(leadId: string, move: StageMoveResult) {
 
   revalidatePath(`/admin/leads/${leadId}`);
   revalidatePath("/admin");
-  revalidatePath("/admin/sequences");
+  revalidatePath("/admin/outbox");
 }
 
 export async function setLeadCrmNotes(leadId: string, crmNotes: string) {
@@ -255,6 +256,20 @@ export async function setLeadUnsubscribed(leadId: string, value: boolean) {
 }
 
 /**
+ * The outbox's global Pause switch. While Paused the send worker attempts
+ * no jobs and cancels nothing; held emails (including overdue ones) send on
+ * the first run after resume. "Send now" still works — a deliberate
+ * per-email override of the brake.
+ */
+export async function setSendingPaused(paused: boolean) {
+  await requireSession();
+
+  await updateSettings({ paused });
+
+  revalidatePath("/admin/outbox");
+}
+
+/**
  * Renders an email job for the outbox preview — the exact subject and body
  * the lead will receive, via the same rendering path the send worker uses.
  */
@@ -274,7 +289,6 @@ export async function sendEmailJobNow(jobId: string): Promise<JobSendResult> {
   const result = await processEmailJob(jobId);
 
   revalidatePath("/admin/outbox");
-  revalidatePath("/admin/sequences");
   return result;
 }
 
@@ -299,5 +313,4 @@ export async function cancelEmailJob(jobId: string) {
   revalidatePath(`/admin/leads/${result[0].leadId}`);
   revalidatePath("/admin");
   revalidatePath("/admin/outbox");
-  revalidatePath("/admin/sequences");
 }
