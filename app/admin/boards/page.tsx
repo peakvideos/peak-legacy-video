@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { bookings, emailJobs, emailTemplates, leads } from "@/lib/db/schema";
 import { listStageRows } from "@/lib/stages";
 import { getSettings } from "@/lib/stages/settings";
+import { loadAutomationCountsByStage } from "@/lib/admin/journey";
 import { KanbanBoard } from "@/components/admin/kanban-board";
 import type { KanbanLeadRow } from "@/components/admin/kanban-card";
 import { LeadDetailModal } from "@/components/admin/lead-detail-modal";
@@ -18,9 +19,10 @@ export default async function BoardsPage({
 }) {
   const sp = await searchParams;
 
-  const [stageRows, settings, allLeads, upcomingBookings, nextEmailJobs, detail] = await Promise.all([
+  const [stageRows, settings, automationCounts, allLeads, upcomingBookings, nextEmailJobs, detail] = await Promise.all([
     listStageRows(),
     getSettings(),
+    loadAutomationCountsByStage(),
     db.select().from(leads).orderBy(desc(leads.createdAt)),
     db
       .select()
@@ -95,6 +97,7 @@ export default async function BoardsPage({
         <KanbanBoard
           leads={kanbanLeads}
           stages={stageRows}
+          automationCounts={automationCounts}
           settings={{
             entryStageId: settings.entryStageId,
             bookingStageId: settings.bookingStageId,

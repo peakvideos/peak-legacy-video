@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
+import { formatDelay, formatDelayPhrase, parseDelay } from "@/lib/admin/delay";
 import {
   addAutomation,
   removeAutomation,
@@ -281,7 +282,7 @@ function AutomationRow({
         ) : (
           <>
             <span className="text-sm font-heading text-(--adm-text-muted) tabular-nums">
-              after {formatDelayLabel(automation.delayMinutes)}
+              {formatDelayPhrase(automation.delayMinutes)}
             </span>
             <button
               type="button"
@@ -411,42 +412,4 @@ function AddAutomationForm({
       {error && <p className="text-xs text-blush">{error}</p>}
     </section>
   );
-}
-
-const DELAY_RE = /^\s*(\d+(?:\.\d+)?)\s*([mhd])\s*$/i;
-
-function parseDelay(input: string): number | null {
-  const m = DELAY_RE.exec(input);
-  if (!m) {
-    const n = Number(input.trim());
-    if (Number.isFinite(n) && n >= 0) return n;
-    return null;
-  }
-  const value = Number(m[1]);
-  const unit = m[2].toLowerCase();
-  if (!Number.isFinite(value) || value < 0) return null;
-  if (unit === "m") return value;
-  if (unit === "h") return value * 60;
-  if (unit === "d") return value * 60 * 24;
-  return null;
-}
-
-function formatDelay(minutes: number): string {
-  if (minutes === 0) return "0m";
-  if (minutes % (60 * 24) === 0) return `${minutes / (60 * 24)}d`;
-  if (minutes % 60 === 0) return `${minutes / 60}h`;
-  return `${minutes}m`;
-}
-
-function formatDelayLabel(minutes: number): string {
-  if (minutes === 0) return "immediately";
-  const days = minutes / (60 * 24);
-  if (Number.isInteger(days) && days >= 1) {
-    return `${days} day${days === 1 ? "" : "s"}`;
-  }
-  const hours = minutes / 60;
-  if (Number.isInteger(hours) && hours >= 1) {
-    return `${hours} hour${hours === 1 ? "" : "s"}`;
-  }
-  return `${minutes} min`;
 }
